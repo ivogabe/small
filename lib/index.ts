@@ -55,7 +55,7 @@ export function gulp(startFileName: string, options?: GulpOptions) {
 
 	var externalResolve: string[] = [];
 	if (options.includeNode) {
-		externalResolve.push(path.join(__dirname, 'node_modules/browser-builtins'));
+		externalResolve.push(path.join(__dirname, '../node_modules/browser-builtins'));
 	}
 
 	if (options.externalResolve) {
