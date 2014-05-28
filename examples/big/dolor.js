@@ -1,0 +1,1 @@
+exports.ipsum = require('./ipsum');

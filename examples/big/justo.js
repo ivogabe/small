@@ -1,0 +1,15 @@
+module.exports.lorem = require('./lorem');
+module.exports.mi = require('./mi');
+module.exports.pellentesque = require('./pellentesque');
+module.exports.egestas = require('./egestas');
+module.exports.pulvinar = require('./pulvinar');
+module.exports.at = require('./at');
+module.exports.nisi = require('./nisi');
+module.exports.nec = require('./nec');
+module.exports.diam = require('./diam');
+module.exports.sit = require('./sit');
+module.exports.ipsum = require('./ipsum');
+module.exports.porta = require('./porta');
+module.exports.suscipit = require('./suscipit');
+module.exports.et = require('./et');
+module.exports.viverra = require('./viverra');

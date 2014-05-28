@@ -1,0 +1,11 @@
+exports.lorem = require('./lorem');
+exports.mi = require('./mi');
+exports.pellentesque = require('./pellentesque');
+exports.egestas = require('./egestas');
+exports.pulvinar = require('./pulvinar');
+exports.at = require('./at');
+exports.nisi = require('./nisi');
+exports.nec = require('./nec');
+exports.diam = require('./diam');
+exports.sit = require('./sit');
+exports.ipsum = require('./ipsum');

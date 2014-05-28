@@ -1,0 +1,1 @@
+this.dolor = require('./dolor');

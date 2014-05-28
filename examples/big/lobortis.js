@@ -1,0 +1,1 @@
+exports.lorem = require('./lorem');

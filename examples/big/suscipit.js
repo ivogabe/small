@@ -1,0 +1,12 @@
+this.amet = require('./amet');
+this.consectetur = require('./consectetur');
+this.adipiscing = require('./adipiscing');
+this.lobortis = require('./lobortis');
+this.in = require('./in');
+this.scelerisque = require('./scelerisque');
+this.vulputate = require('./vulputate');
+this.at = require('./at');
+this.facilisis = require('./facilisis');
+this.urna = require('./urna');
+this.donec = require('./donec');
+this.morbi = require('./morbi');

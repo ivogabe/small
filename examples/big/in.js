@@ -1,0 +1,1 @@
+this.lorem = require('./lorem');

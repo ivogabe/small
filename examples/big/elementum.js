@@ -1,0 +1,15 @@
+module.exports.dolor = require('./dolor');
+module.exports.elit = require('./elit');
+module.exports.rutrum = require('./rutrum');
+module.exports.interdum = require('./interdum');
+module.exports.mollis = require('./mollis');
+module.exports.etiam = require('./etiam');
+module.exports.nunc = require('./nunc');
+module.exports.ornare = require('./ornare');
+module.exports.eros = require('./eros');
+module.exports.nulla = require('./nulla');
+module.exports.pulvinar = require('./pulvinar');
+module.exports.aliquet = require('./aliquet');
+module.exports.ligula = require('./ligula');
+module.exports.ullamcorper = require('./ullamcorper');
+module.exports.amet = require('./amet');
