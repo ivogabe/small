@@ -61,7 +61,7 @@ export function gulp(startFileName: string, options?: GulpOptions) {
 	if (options.externalResolve) {
 		externalResolve = externalResolve.concat(options.externalResolve.map(value => path.resolve(process.cwd(), value)));
 	}
-	if (externalResolve.length >= 0) {
+	if (externalResolve.length > 0) {
 		usedIO = new io.HybridIO(streamIO, new io.NodeIO(), externalResolve, true);
 	} else {
 		usedIO = streamIO;
