@@ -93,6 +93,5 @@ export function generateStructure(proj: project.Project) {
 				}
 			});
 		});
-		console.log(f.file.relative + ':', f.structureDependencies.map(other => other.file.relative));
 	}
 }
