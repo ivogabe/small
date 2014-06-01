@@ -103,11 +103,11 @@ Small doesn't have loaders like browserify does. Instead you can use gulp. Examp
 ```
 var gulp = require('gulp');
 var small = require('small').gulp;
-var type = require('gulp-type');
+var ts = require('gulp-type');
 
 gulp.task('scripts', function() {
 	return gulp.src('lib/**.ts')
-		.pipe(ts({module: 'commonjs'})).js
+		.pipe(ts({module: 'commonjs'})).js // Compile typescript to javascript
 		.pipe(small('index.js', {})
 		.pipe(gulp.dest('release'))
 });
