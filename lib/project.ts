@@ -254,7 +254,7 @@ export class Project extends events.EventEmitter {
 				}
 
 				// TODO: Check whether it is secure to use VAR_ASSIGN or VAR_ASSIGN_AND_RENAME
-				if (imp.file.structureParent === f) {
+				/* if (imp.file.structureParent === f) {
 					if (f.importNodes.filter((item) => {
 						return item.file === imp.file;
 					})[0] === imp) {
@@ -262,7 +262,7 @@ export class Project extends events.EventEmitter {
 						imp.file.defined = true;
 						return;
 					}
-				}
+				} */
 
 				if (imp instanceof importNode.SimpleImport && imp.safe && (<importNode.SimpleImport>imp).dotArray.length === 0) {
 					imp.outputStyle = importNode.OutputStyle.VAR_RENAME;
