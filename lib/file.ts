@@ -113,6 +113,14 @@ export class SourceFile {
 
 	structureParent: SourceFile = undefined;
 	structureChildren: SourceFile[] = [];
+	/**
+	 * Children and children of children (of children ...)
+	 */
+	structureAllChildren: SourceFile[] = [];
+	/**
+	 * Dependencies and dependencies of children (of children ...)
+	 */
+	structureDependencies: SourceFile[] = [];
 	structureLevel: number = undefined;
 
 	defined: boolean = false;

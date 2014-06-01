@@ -64,4 +64,35 @@ export function generateStructure(proj: project.Project) {
 
 		if (f.structureParent) f.structureParent.structureChildren.splice(0, 0, f);
 	}
+
+	for (var i = 0; i < files.length; ++i) {
+		var f = files[i];
+
+		f.structureAllChildren = f.structureChildren;
+
+		f.structureChildren.forEach(other => {
+			f.structureAllChildren = f.structureAllChildren.concat(other.structureAllChildren);
+		});
+	}
+
+	for (var i = 0; i < files.length; ++i) {
+		var f = files[i];
+
+		f.structureDependencies = [];
+
+		f.dependencies.forEach(dep => {
+			if (f.structureAllChildren.indexOf(dep) === -1) {
+				f.structureDependencies.push(dep);
+			}
+		});
+
+		f.structureChildren.forEach(other => {
+			other.structureDependencies.forEach(dep => {
+				if (f.structureDependencies.indexOf(dep) === -1 && f.structureAllChildren.indexOf(dep) === -1) {
+					f.structureDependencies.push(dep);
+				}
+			});
+		});
+		console.log(f.file.relative + ':', f.structureDependencies.map(other => other.file.relative));
+	}
 }
