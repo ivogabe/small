@@ -31,7 +31,7 @@ export interface GulpOptions extends ProjectOptions {
 	 * Usefull for files in node_modules, so you don't have to list them all in the gulp.src call.
 	 * Example: ['./node_modules']
 	 */
-	externalResolve: string[];
+	externalResolve?: string[];
 }
 
 export function error(err: Error) {
