@@ -47,7 +47,7 @@ export function error(err: Error) {
 	console.error(message);
 }
 
-export function gulp(startFileName: string, options?: GulpOptions) {
+export function gulp(startFileName: string, options: GulpOptions = {}) {
 	var streamIO = new io.StreamIO();
 	var stream = streamIO.stream;
 
