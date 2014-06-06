@@ -1,6 +1,6 @@
 {
 	"name": "small",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A tool to bundle commonjs files. Designed to produce the smallest file size possible.",
 	"keywords": [
 		"bundle", "commonjs", "browser", "gulpfriendly"
