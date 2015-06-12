@@ -1,36 +1,39 @@
 {
-	"name": "small",
-	"version": "0.1.1",
-	"description": "A tool to bundle commonjs files. Designed to produce the smallest file size possible.",
-	"keywords": [
-		"bundle", "commonjs", "browser", "gulpfriendly"
-	],
-	"author": {
-		"name": "Ivo Gabe de Wolff",
-		"url": "http://ivogabe.com/"
-	},
-	"dependencies": {
-		"uglify-js": "^2.3.6",
-		"commander": "^2.2.0",
-		"vinyl": "^0.2.3",
-		"bluebird": "^1.2.4",
-		"chalk": "^0.4.0",
-		"browser-builtins": "^3.1.0"
-	},
-	"devDependencies": {
-		"gulp": "^3.6.2",
-		"gulp-rename": "^1.2.0",
-		"gulp-tslint": "^1.1.0",
-		"gulp-type": "^0.1.1"
-	},
-
-	"main": "./release/index.js",
-	"bin": {
-		"small": "./bin.js"
-	},
-
-	"repository": {
-		"type" : "git",
-		"url" : "https://github.com/ivogabe/small.git"
-	}
+  "name": "small",
+  "version": "0.1.1",
+  "description": "A tool to bundle commonjs files. Designed to produce the smallest file size possible.",
+  "keywords": [
+    "bundle",
+    "commonjs",
+    "browser",
+    "gulpfriendly"
+  ],
+  "author": {
+    "name": "Ivo Gabe de Wolff",
+    "url": "http://ivogabe.com/"
+  },
+  "dependencies": {
+    "bluebird": "^1.2.4",
+    "browser-builtins": "^3.1.0",
+    "chalk": "^0.4.0",
+    "commander": "^2.2.0",
+    "typescript": "^1.5.0-beta",
+    "uglify-js": "^2.3.6",
+    "vinyl": "^0.2.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.6.2",
+    "gulp-rename": "^1.2.0",
+    "gulp-tslint": "^1.1.0",
+    "gulp-type": "^0.1.1",
+    "gulp-typescript": "^2.7.6"
+  },
+  "main": "./release/index.js",
+  "bin": {
+    "small": "./bin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivogabe/small.git"
+  }
 }

@@ -1,12 +1,13 @@
 var gulp = require('gulp');
-var ts = require('gulp-type');
+var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
 var rename = require('gulp-rename');
 
 var tsProject = ts.createProject({
 	noExternalResolve: true,
 	target: 'es5',
-	module: 'commonjs'
+	module: 'commonjs',
+	typescript: require('typescript')
 });
 var tslintConfig = require('./tslint.json');
 
@@ -21,8 +22,6 @@ gulp.task('compile', function() {
 			.pipe(ts(tsProject));
 
 	return tsResult.js.pipe(gulp.dest('release'));
-
-	//tsResult.js.pipe();
 });
 
 gulp.task('test-1', ['compile'], function() {
