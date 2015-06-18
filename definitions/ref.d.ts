@@ -5,3 +5,4 @@
 /// <reference path="commander.d.ts" />
 /// <reference path="chalk.d.ts" />
 /// <reference path="browser-builtins.d.ts" />
+/// <reference path="graphlib.d.ts" />
