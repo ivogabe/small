@@ -52,10 +52,17 @@ export function generateOrder(proj: project.Project) {
 	
 	for (const groupName of order) {
 		const group = acyclicGraph.node(groupName);
+		const component: file.SourceFile[] = [];
 		const cyclic = group.filenames.length !== 1;
 		for (const filename of group.filenames) {
 			const file = inputGraph.node(filename).file;
-			file.hasCircularDependencies = cyclic;
+			if (cyclic) {
+				file.hasCircularDependencies = true;
+				file.connectedComponent = component;
+				component.push(file);
+			} else {
+				file.hasCircularDependencies = false;
+			}
 			file.orderIndex = index++;
 			proj.orderFiles.push(file);
 		}

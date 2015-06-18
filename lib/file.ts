@@ -87,6 +87,7 @@ export class SourceFile {
 	dependants: SourceFile[] = [];
 	dependantImports: importNode.Import[] = [];
 	hasCircularDependencies: boolean = undefined;
+	connectedComponent: SourceFile[] = [];
 
 	conditional: boolean = undefined;
 
