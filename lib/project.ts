@@ -139,7 +139,6 @@ export class Project extends events.EventEmitter {
 					this._fileQueue--;
 					if (this._fileQueue === 0) {
 						this.emit('read');
-						this.setAllDependencies();
 						this.generateOrder();
 						this.generateStructure();
 						this.importSetOuputStyles();
@@ -205,7 +204,6 @@ export class Project extends events.EventEmitter {
 					queue--;
 
 					if (queue === 0) {
-						f.unhandledDependencies = [].concat(f.dependencies);
 						callback(undefined);
 						done = true;
 					}
@@ -224,11 +222,6 @@ export class Project extends events.EventEmitter {
 	}
 	resolveSingle(f: file.SourceFile, str: string): Promise<string> {
 		return resolve.resolve(this, f.file, str);
-	}
-	setAllDependencies() {
-		this.files.forEach((file) => {
-			file.setAllDependencies();
-		});
 	}
 	generateOrder() {
 		order.generateOrder(this);
