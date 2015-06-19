@@ -1,6 +1,6 @@
 /// <reference path="../definitions/ref.d.ts" />
 
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import exportNode = require('./exportNode');
 import importNode = require('./importNode');
 import astWalker = require('./astWalker');
@@ -24,10 +24,13 @@ export class SourceFile {
 
 	parse(source: string) {
 		this.source = source;
-		this.ast = uglify.parse(this.source, {
+		
+		this.ast = ts.createSourceFile(this.filename, this.source, ts.ScriptTarget.Latest, true /* ?? */);
+		
+		/*this.ast = uglify.parse(this.source, {
 			filename: this.filename
-		});
-		this.ast.figure_out_scope();
+		});*/
+		// this.ast.figure_out_scope();
 	}
 
 	analyse() {
@@ -40,7 +43,7 @@ export class SourceFile {
 	source: string;
 	compiled: string;
 
-	ast: uglify.AST_Toplevel;
+	ast: ts.SourceFile;
 
 	exportNodes: exportNode.Export[] = [];
 	importNodes: importNode.Import[] = [];
@@ -107,7 +110,7 @@ export class SourceFile {
 
 	unhandledDependencies: SourceFile[] = [];
 
-	conditional: boolean = undefined;
+	// conditional: boolean = undefined;
 
 	orderIndex: number;
 

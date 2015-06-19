@@ -1,6 +1,6 @@
 /// <reference path="../definitions/ref.d.ts" />
 
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import file = require('./file');
 
 /**
@@ -12,14 +12,14 @@ export function combine(f: file.SourceFile) {
 	var exports = f.getSingleExportNodes();
 	var fullExports = f.getFullExportNodes();
 
-	var findImport = (def: uglify.SymbolDef) => {
-		for (var i = 0; i < imports.length; ++i) {
+	var findImport = (def: ts.Identifier) => {
+		/* for (var i = 0; i < imports.length; ++i) {
 			var imp = imports[i];
 
 			if (imp.safe && imp.varAst.thedef === def) {
 				return imp;
 			}
-		}
+		} */
 		return undefined;
 	};
 

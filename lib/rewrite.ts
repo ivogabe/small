@@ -53,8 +53,8 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 
 	f.exportNodes.forEach((exp) => {
 		replaces.push({
-			pos: exp.exportAst.start.pos,
-			endpos: exp.exportAst.end.endpos,
+			pos: exp.exportAst.pos,
+			endpos: exp.exportAst.end,
 			value: (exp.style === exportNode.Style.ModuleExports) ? varModuleExports : varExports
 		});
 	});
@@ -63,8 +63,8 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		switch (imp.outputStyle) {
 			case importNode.OutputStyle.SINGLE:
 				replaces.push({
-					pos: imp.importAst.start.pos,
-					endpos: imp.importAst.end.endpos,
+					pos: imp.importAst.pos,
+					endpos: imp.importAst.end,
 
 					beforeFile: '(',
 					file: imp.file,
@@ -73,8 +73,8 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				return;
 			case importNode.OutputStyle.VAR_REFERENCE:
 				replaces.push({
-					pos: imp.importAst.start.pos,
-					endpos: imp.importAst.end.endpos,
+					pos: imp.importAst.pos,
+					endpos: imp.importAst.end,
 
 					value: imp.file ? imp.file.varName : imp.globalModule._varName
 				});
@@ -82,8 +82,8 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			case importNode.OutputStyle.VAR_ASSIGN:
 			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
 				replaces.push({
-					pos: imp.importAst.start.pos,
-					endpos: imp.importAst.end.endpos,
+					pos: imp.importAst.pos,
+					endpos: imp.importAst.end,
 
 					beforeFile: '(' + imp.file.varName + ' = ',
 					file: imp.file,
@@ -96,21 +96,22 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		switch (imp.outputStyle) {
 			case importNode.OutputStyle.VAR_RENAME:
 				replaces.push({
-					pos: imp.ast.start.pos,
-					endpos: imp.ast.end.endpos,
+					pos: imp.ast.pos,
+					endpos: imp.ast.end,
 
 					value: ''
 				});
 			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
 				var impSimple = <importNode.SimpleImport> imp;
-				impSimple.varAst.thedef.references.forEach((ref) => {
+				// TODO: Rename all references of variable
+				/*impSimple.varAst.thedef.references.forEach((ref) => {
 					replaces.push({
 						pos: ref.start.pos,
 						endpos: ref.end.endpos,
 
 						value: imp.file.varName
 					});
-				});
+				});*/
 		}
 	});
 
