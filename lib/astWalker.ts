@@ -13,11 +13,11 @@ export interface ExportsInfo {
 	ast: ts.Node;
 }
 
-function isDefined(identifier: ts.Identifier) {
-	return false; // TODO: isDefined
+function isDefined(f: file.SourceFile, identifier: ts.Identifier) {
+	return f.types.getSymbolAtLocation(identifier) !== undefined;
 }
 
-export function matchExportsAlias(node: ts.Node, isTopLevel: boolean): ExportsInfo {
+export function matchExportsAlias(f: file.SourceFile, node: ts.Node, isTopLevel: boolean): ExportsInfo {
 	// this
 	if (node.kind === ts.SyntaxKind.ThisKeyword && isTopLevel) {
 		return {
@@ -31,7 +31,7 @@ export function matchExportsAlias(node: ts.Node, isTopLevel: boolean): ExportsIn
 	// exports
 	if (node.kind === ts.SyntaxKind.Identifier) {
 		var nodeVar = <ts.Identifier> node;
-		if (nodeVar.text === 'exports' && isDefined(nodeVar)) {
+		if (nodeVar.text === 'exports' && !isDefined(f, nodeVar)) {
 			return {
 				style: exportNode.Style.Exports,
 				dotArray: [],
@@ -48,7 +48,7 @@ export function matchExportsAlias(node: ts.Node, isTopLevel: boolean): ExportsIn
 		if (nodeAccess.expression.kind === ts.SyntaxKind.Identifier && nodeAccess.name.text === 'exports') {
 			var expressionVal = <ts.Identifier> nodeAccess.expression;
 
-			if (expressionVal.text === 'module' && !isDefined(expressionVal)) {
+			if (expressionVal.text === 'module' && !isDefined(f, expressionVal)) {
 				return {
 					style: exportNode.Style.ModuleExports,
 					dotArray: [],
@@ -59,7 +59,7 @@ export function matchExportsAlias(node: ts.Node, isTopLevel: boolean): ExportsIn
 		}
 
 		// [some exports style].[property]
-		var exportAlias: ExportsInfo = matchExportsAlias(nodeAccess.name, isTopLevel);
+		var exportAlias: ExportsInfo = matchExportsAlias(f, nodeAccess.name, isTopLevel);
 		if (exportAlias) {
 			return {
 				style: exportAlias.style,
@@ -152,7 +152,7 @@ class ParseWalker extends Walker {
 			if (nodeCall.expression.kind === ts.SyntaxKind.Identifier && nodeCall.arguments.length === 1) {
 				var funcVar = <ts.Identifier> nodeCall.expression;
 
-				if (funcVar.text === 'require' && !isDefined(funcVar)) {
+				if (funcVar.text === 'require' && !isDefined(this.file, funcVar)) {
 					var arg = nodeCall.arguments[0];
 
 					if (arg.kind !== ts.SyntaxKind.StringLiteral) {
@@ -199,7 +199,7 @@ class ParseWalker extends Walker {
 		}
 
 		// exports
-		var match = matchExportsAlias(node, !this.isConditional);
+		var match = matchExportsAlias(this.file, node, !this.isConditional);
 		if (match) {
 			if (node.parent.kind === ts.SyntaxKind.BinaryExpression && (<ts.BinaryExpression> node.parent).operatorToken.kind === ts.SyntaxKind.EqualsToken) {
 				var parentAssign = <ts.BinaryExpression> node.parent;
