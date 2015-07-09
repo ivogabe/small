@@ -1,7 +1,6 @@
 var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
-var rename = require('gulp-rename');
 
 var tsProject = ts.createProject({
 	noExternalResolve: true,
