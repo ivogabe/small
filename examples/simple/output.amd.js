@@ -10,10 +10,10 @@ exports = 'Hello, World';
 
 return exports;
 })();
-var c = __small$_1;
+;
 var b = ((function() {
 var exports = {};
-var c = __small$_1;
+;
 var document = __small$_mod_0;
 
 document.title = c;
@@ -23,7 +23,7 @@ exports.c = c;
 return exports;
 })());
 
-var c2 = __small$_1;
+;
 
 function hallo() {
 	this.c = c;
