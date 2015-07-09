@@ -161,7 +161,7 @@ class ParseWalker extends Walker {
 
 					var imp: importNode.Import;
 					if (node.parent.kind === ts.SyntaxKind.VariableDeclaration
-						&& (<ts.VariableDeclaration> node.parent).kind === ts.SyntaxKind.Identifier) { // Don't allow destructuring here
+						&& (<ts.VariableDeclaration> node.parent).name.kind === ts.SyntaxKind.Identifier) { // Don't allow destructuring here
 						// TODO: imports with properties, like var func require('name').someObj.someFunc;
 						var parentVar = <ts.VariableDeclaration> node.parent;
 
@@ -170,7 +170,7 @@ class ParseWalker extends Walker {
 						impSimple.ast = parentVar;
 						impSimple.importAst = nodeCall;
 						impSimple.dotArray = [];
-						// impSimple.varAst = parentVar.parent;
+						impSimple.symbol = this.file.types.getSymbolAtLocation(parentVar);
 
 						impSimple.safe = true;
 
@@ -183,6 +183,7 @@ class ParseWalker extends Walker {
 						imp.safe = false;
 					}
 
+					imp.conditional = this.isConditional;
 					// imp.conditional = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody) || walker.find_parent(uglify.AST_Conditional) || walker.find_parent(uglify.AST_Binary)) ? false : true;
 					imp.safe = imp.safe && !imp.conditional;
 
@@ -193,10 +194,6 @@ class ParseWalker extends Walker {
 					imp.relativePath = (<ts.StringLiteral> arg).text;
 
 					this.file.importNodes.push(imp);
-
-					// if (arg instanceof uglify.AST_String) {
-					// 	var argStr = <uglify.AST_String> arg;
-					// }
 				}
 			}
 		}
@@ -216,13 +213,14 @@ class ParseWalker extends Walker {
 					expF.astLeft = <ts.PropertyAccessExpression> match.ast;
 					expF.exportAst = match.exportAST;
 					expF.astRight = parentAssign.right;
-	
-					expF.safe = false; // TODO:  (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody)) ? false : true;
-	
+					expF.symbolRight = (expF.astRight.kind === ts.SyntaxKind.Identifier) ? this.file.types.getSymbolAtLocation(expF.astRight) : undefined;
+
+					expF.safe = !this.isConditional;
+
 					this.handleExportTopLevel(expF);
-	
+
 					this.file.exportNodes.push(expF);
-	
+
 					return true;
 				} else {
 					var expS = new exportNode.SingleExport();
@@ -231,13 +229,14 @@ class ParseWalker extends Walker {
 					expS.astLeft = <ts.PropertyAccessExpression> match.ast;
 					expS.exportAst = match.exportAST;
 					expS.astRight = parentAssign.right;
-	
+					expS.symbolRight = (expS.astRight.kind === ts.SyntaxKind.Identifier) ? this.file.types.getSymbolAtLocation(expS.astRight) : undefined;
+
 					expS.dotArray = match.dotArray;
-	
-					expS.safe = false; // TODO: (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody)) ? false : true;
-	
+
+					expS.safe = !this.isConditional;
+
 					this.handleExportTopLevel(expS);
-	
+
 					this.file.exportNodes.push(expS);
 					return true;
 				}
@@ -270,35 +269,49 @@ class SafetyWalker extends Walker {
 		// import
 		
 		// TODO: def
-		var def: any;
+		var symbol: ts.Symbol;
 		//var def: uglify.SymbolDef;
 
 		if (node.kind === ts.SyntaxKind.VariableDeclaration) {
 			var nodeVarDef = <ts.VariableDeclaration> node;
-			//def = (nodeVarDef.name).thedef;
+			if ((<ts.VariableDeclaration> node).initializer) {
+				symbol = this.file.types.getSymbolAtLocation(nodeVarDef.name);
+			}
 		} else if (node.kind === ts.SyntaxKind.BinaryExpression && (<ts.BinaryExpression>node).operatorToken.kind === ts.SyntaxKind.EqualsToken) {
 			var nodeAssign = <ts.BinaryExpression> node;
 			if (nodeAssign.left.kind === ts.SyntaxKind.Identifier) {
 				var nodeLeftVar = <ts.Identifier> nodeAssign.left;
-				// def = nodeLeftVar.thedef;
+				symbol = this.file.types.getSymbolAtLocation(nodeLeftVar);
 			}
 		}
+		
+		var symbolRef: ts.Symbol;
+		if (node.kind === ts.SyntaxKind.Identifier) {
+			symbolRef = this.file.types.getSymbolAtLocation(node);
+		}
 
-		if (def) {
+		if (symbol || symbolRef) {
 			for (var i = 0; i < this.file.importNodes.length; ++i) {
 				var imp = this.file.importNodes[i];
 				if (imp instanceof importNode.SimpleImport) {
 					var impSimple = <importNode.SimpleImport> imp;
-
-					if (!impSimple.safe) continue;
-					// if (impSimple.varAst.thedef !== def) continue;
+					
+					if (symbolRef && symbolRef === impSimple.symbol) {
+						impSimple.references.push(node);
+					}
+					
+					if (!impSimple.safe || !symbol) continue;
+					if (impSimple.symbol !== symbol) continue;
 
 					if (impSimple.ast === node) continue;
 
 					impSimple.safe = false;
+					break;
 				}
 			}
 		}
+		
+		
 		
 		this.descent();
 	};

@@ -25,12 +25,9 @@ export class SingleExport extends Export {
 	ast: ts.BinaryExpression;
 	astLeft: ts.PropertyAccessExpression;
 	astRight: ts.Expression;
+	symbolRight: ts.Symbol;
 
 	dotArray: string[];
-
-	get def() {
-		return undefined; // getDefFromNode(this.astRight);
-	}
 }
 
 export class FullExport extends Export {
@@ -39,10 +36,7 @@ export class FullExport extends Export {
 	ast: ts.BinaryExpression;
 	astLeft: ts.PropertyAccessExpression;
 	astRight: ts.Expression;
-
-	get def() {
-		return undefined; // getDefFromNode(this.astRight);
-	}
+	symbolRight: ts.Symbol;
 }
 
 /**

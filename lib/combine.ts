@@ -12,23 +12,23 @@ export function combine(f: file.SourceFile) {
 	var exports = f.getSingleExportNodes();
 	var fullExports = f.getFullExportNodes();
 
-	var findImport = (def: ts.Identifier) => {
-		/* for (var i = 0; i < imports.length; ++i) {
+	var findImport = (symbol: ts.Symbol) => {
+		for (var i = 0; i < imports.length; ++i) {
 			var imp = imports[i];
 
-			if (imp.safe && imp.varAst.thedef === def) {
+			if (imp.safe && imp.symbol === symbol) {
 				return imp;
 			}
-		} */
+		}
 		return undefined;
 	};
 
 	if (fullExports.length === 1) {
-		fullExports[0].importNode = findImport(fullExports[0].def);
+		fullExports[0].importNode = findImport(fullExports[0].symbolRight);
 	} else if (fullExports.length === 0) {
 		for (var i = 0; i < exports.length; ++i) {
 			var exp = exports[i];
-			exp.importNode = findImport(exp.def);
+			exp.importNode = findImport(exp.symbolRight);
 		}
 	}
 }

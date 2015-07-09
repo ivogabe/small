@@ -27,10 +27,19 @@ export class SourceFile {
 		
 		this.ast = ts.createSourceFile(this.filename, this.source, ts.ScriptTarget.Latest, true /* ?? */);
 		
-		/*this.ast = uglify.parse(this.source, {
-			filename: this.filename
-		});*/
-		// this.ast.figure_out_scope();
+		const host: ts.CompilerHost = {
+			getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {
+				if (fileName === this.filename) return this.ast;
+			},
+			getDefaultLibFileName: (options: ts.CompilerOptions) => '',
+			writeFile: () => {},
+			getCurrentDirectory: () => '',
+			getCanonicalFileName: (fileName: string) => fileName,
+			useCaseSensitiveFileNames: () => true,
+			getNewLine: () => '\n\r'
+		};
+		const program = ts.createProgram([this.filename], { noResolve: true, noEmit: true, target: ts.ScriptTarget.Latest, allowNonTsExtensions: true }, host);
+		this.types = program.getTypeChecker();
 	}
 
 	analyse() {
@@ -44,6 +53,7 @@ export class SourceFile {
 	compiled: string;
 
 	ast: ts.SourceFile;
+	types: ts.TypeChecker;
 
 	exportNodes: exportNode.Export[] = [];
 	importNodes: importNode.Import[] = [];

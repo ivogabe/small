@@ -61,6 +61,8 @@ export class Import {
 	topLevelIndex: number;
 	safe: boolean;
 	conditional: boolean;
+	
+	references: ts.Node[] = [];
 
 	outputStyle: OutputStyle;
 }
@@ -70,8 +72,7 @@ export class Import {
  */
 export class SimpleImport extends Import {
 	ast: ts.VariableDeclaration;
-	// varAst: ts.VariableDeclarationList;
-	// TODO: ???
+	symbol: ts.Symbol;
 
 	exportNode: exportNode.Export;
 

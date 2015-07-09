@@ -103,15 +103,15 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				});
 			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
 				var impSimple = <importNode.SimpleImport> imp;
-				// TODO: Rename all references of variable
-				/*impSimple.varAst.thedef.references.forEach((ref) => {
+				
+				impSimple.references.forEach((ref) => {
 					replaces.push({
-						pos: ref.start.pos,
-						endpos: ref.end.endpos,
+						pos: ref.pos,
+						endpos: ref.end,
 
 						value: imp.file.varName
 					});
-				});*/
+				});
 		}
 	});
 

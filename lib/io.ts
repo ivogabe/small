@@ -2,7 +2,6 @@
 
 import Vinyl = require('vinyl');
 import Promise = require('bluebird');
-// import path = require('path');
 import fs = require('fs');
 import stream = require('stream');
 import events = require('events');
