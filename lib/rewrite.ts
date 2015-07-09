@@ -1,3 +1,4 @@
+import ts = require('typescript');
 import project = require('./project');
 import file = require('./file');
 import exportNode = require('./exportNode');
@@ -24,6 +25,11 @@ export interface RewriteData {
 export interface ClosureParameter {
 	name: string;
 	value: string;
+}
+
+interface RemovedVariableDeclaration {
+	list: ts.VariableDeclarationList;
+	removedDeclarations: ts.VariableDeclaration[];
 }
 
 export function rewriteFile(p: project.Project, f: file.SourceFile) {
@@ -58,6 +64,20 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			value: (exp.style === exportNode.Style.ModuleExports) ? varModuleExports : varExports
 		});
 	});
+	
+	const removedVars: RemovedVariableDeclaration[] = [];
+	const removeVar = (declaration: ts.VariableDeclaration) => {
+		for (const removed of removedVars) {
+			if (removed.list === declaration.parent) {
+				removed.removedDeclarations.push(declaration);
+				return;
+			}
+		}
+		removedVars.push({
+			list: declaration.parent,
+			removedDeclarations: [declaration]
+		});
+	};
 
 	f.importNodes.forEach((imp) => {
 		switch (imp.outputStyle) {
@@ -93,14 +113,21 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				break;
 		}
 
+		
+
 		switch (imp.outputStyle) {
 			case importNode.OutputStyle.VAR_RENAME:
-				replaces.push({
-					pos: imp.ast.pos,
-					endpos: imp.ast.end,
-
-					value: ''
-				});
+				if (imp.ast.kind === ts.SyntaxKind.VariableDeclaration) {
+					removeVar(<ts.VariableDeclaration> imp.ast);
+				} else {
+					replaces.push({
+						pos: imp.ast.pos,
+						endpos: imp.ast.end,
+	
+						value: ''
+					});
+				}
+				/* fall through */
 			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
 				var impSimple = <importNode.SimpleImport> imp;
 				
@@ -114,6 +141,27 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				});
 		}
 	});
+	
+	for (const removed of removedVars) {
+		if (removed.list.declarations.length === removed.removedDeclarations.length) {
+			// All declarations are removed, so we can remove the full variable statement.
+			replaces.push({
+				pos: removed.list.pos,
+				endpos: removed.list.end,
+
+				value: ''
+			});
+		} else {
+			for (const declaration of removed.removedDeclarations) {
+				replaces.push({
+					pos: declaration.pos,
+					endpos: declaration.end,
+	
+					value: ''
+				});
+			}
+		}
+	}
 
 	var childTopId = 0;
 	f.structureChildren.forEach((other) => {
