@@ -1,7 +1,7 @@
-var c = require('./c');
+var c = require('./c'), foo = 0;
 var b = require('./b');
 
-var c2 = require('./c');
+var bar = 0, c2 = require('./c');
 
 function hallo() {
 	this.c = c;

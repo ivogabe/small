@@ -153,9 +153,12 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			});
 		} else {
 			for (const declaration of removed.removedDeclarations) {
+				const index = removed.list.declarations.indexOf(declaration);
+				const previous = removed.list.declarations[index - 1];
+				const next = removed.list.declarations[index + 1];
 				replaces.push({
-					pos: declaration.pos,
-					endpos: declaration.end,
+					pos: previous ? previous.end : declaration.pos,
+					endpos: next ? next.pos : declaration.end,
 	
 					value: ''
 				});
