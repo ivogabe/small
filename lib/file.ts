@@ -1,6 +1,6 @@
 /// <reference path="../definitions/ref.d.ts" />
 
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import exportNode = require('./exportNode');
 import importNode = require('./importNode');
 import astWalker = require('./astWalker');
@@ -24,10 +24,22 @@ export class SourceFile {
 
 	parse(source: string) {
 		this.source = source;
-		this.ast = uglify.parse(this.source, {
-			filename: this.filename
-		});
-		this.ast.figure_out_scope();
+		
+		this.ast = ts.createSourceFile(this.filename, this.source, ts.ScriptTarget.Latest, true /* ?? */);
+		
+		const host: ts.CompilerHost = {
+			getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {
+				if (fileName === this.filename) return this.ast;
+			},
+			getDefaultLibFileName: (options: ts.CompilerOptions) => '',
+			writeFile: () => {},
+			getCurrentDirectory: () => '',
+			getCanonicalFileName: (fileName: string) => fileName,
+			useCaseSensitiveFileNames: () => true,
+			getNewLine: () => '\n\r'
+		};
+		const program = ts.createProgram([this.filename], { noResolve: true, noEmit: true, target: ts.ScriptTarget.Latest, allowNonTsExtensions: true }, host);
+		this.types = program.getTypeChecker();
 	}
 
 	analyse() {
@@ -40,7 +52,8 @@ export class SourceFile {
 	source: string;
 	compiled: string;
 
-	ast: uglify.AST_Toplevel;
+	ast: ts.SourceFile;
+	types: ts.TypeChecker;
 
 	exportNodes: exportNode.Export[] = [];
 	importNodes: importNode.Import[] = [];
@@ -89,7 +102,7 @@ export class SourceFile {
 	hasCircularDependencies: boolean = undefined;
 	connectedComponent: SourceFile[] = [];
 
-	conditional: boolean = undefined;
+	// conditional: boolean = undefined;
 
 	orderIndex: number;
 

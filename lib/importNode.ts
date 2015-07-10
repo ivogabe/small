@@ -1,5 +1,5 @@
 /// <reference path="../definitions/ref.d.ts" />
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import exportNode = require('./exportNode');
 import file = require('./file');
 import project = require('./project');
@@ -45,8 +45,8 @@ export enum OutputStyle {
 }
 
 export class Import {
-	ast: uglify.AST_Node;
-	importAst: uglify.AST_Call;
+	ast: ts.Node;
+	importAst: ts.CallExpression;
 
 	relativePath: string;
 	absolutePath: string;
@@ -61,16 +61,18 @@ export class Import {
 	topLevelIndex: number;
 	safe: boolean;
 	conditional: boolean;
+	
+	references: ts.Node[] = [];
 
 	outputStyle: OutputStyle;
 }
 
 /**
- * An import like "var uglify = require('uglify-js');"
+ * An import like "var foo = require('foo');"
  */
 export class SimpleImport extends Import {
-	ast: uglify.AST_VarDef;
-	varAst: uglify.AST_SymbolDeclaration; // AST_SymbolVar or AST_SymbolConst
+	ast: ts.VariableDeclaration;
+	symbol: ts.Symbol;
 
 	exportNode: exportNode.Export;
 

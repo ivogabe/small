@@ -1,6 +1,6 @@
 /// <reference path="../definitions/ref.d.ts" />
 
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import file = require('./file');
 import exportNode = require('./exportNode');
 import importNode = require('./importNode');
@@ -9,13 +9,17 @@ export interface ExportsInfo {
 	style: exportNode.Style;
 	dotArray: string[];
 
-	exportAST: uglify.AST_Node;
-	ast: uglify.AST_Node;
+	exportAST: ts.Node;
+	ast: ts.Node;
 }
 
-export function matchExportsAlias(node: uglify.AST_Node, isTopLevel: boolean): ExportsInfo {
+function isDefined(f: file.SourceFile, identifier: ts.Identifier) {
+	return f.types.getSymbolAtLocation(identifier) !== undefined;
+}
+
+export function matchExportsAlias(f: file.SourceFile, node: ts.Node, isTopLevel: boolean): ExportsInfo {
 	// this
-	if (node instanceof uglify.AST_This && isTopLevel) {
+	if (node.kind === ts.SyntaxKind.ThisKeyword && isTopLevel) {
 		return {
 			style: exportNode.Style.This,
 			dotArray: [],
@@ -25,9 +29,9 @@ export function matchExportsAlias(node: uglify.AST_Node, isTopLevel: boolean): E
 	}
 
 	// exports
-	if (node instanceof uglify.AST_SymbolRef) {
-		var nodeVar = <uglify.AST_SymbolRef> node;
-		if (nodeVar.thedef.name === 'exports' && nodeVar.thedef.undeclared) {
+	if (node.kind === ts.SyntaxKind.Identifier) {
+		var nodeVar = <ts.Identifier> node;
+		if (nodeVar.text === 'exports' && !isDefined(f, nodeVar)) {
 			return {
 				style: exportNode.Style.Exports,
 				dotArray: [],
@@ -37,14 +41,14 @@ export function matchExportsAlias(node: uglify.AST_Node, isTopLevel: boolean): E
 		}
 	}
 
-	if (node instanceof uglify.AST_PropAccess) {
-		var nodeAccess = <uglify.AST_PropAccess> node;
+	if (node.kind === ts.SyntaxKind.PropertyAccessExpression) {
+		var nodeAccess = <ts.PropertyAccessExpression> node;
 
 		// module.exports
-		if (nodeAccess.expression instanceof uglify.AST_SymbolRef && nodeAccess.property === 'exports') {
-			var expressionVal = <uglify.AST_SymbolRef> nodeAccess.expression;
+		if (nodeAccess.expression.kind === ts.SyntaxKind.Identifier && nodeAccess.name.text === 'exports') {
+			var expressionVal = <ts.Identifier> nodeAccess.expression;
 
-			if (expressionVal.thedef.name === 'module' && expressionVal.thedef.undeclared) {
+			if (expressionVal.text === 'module' && !isDefined(f, expressionVal)) {
 				return {
 					style: exportNode.Style.ModuleExports,
 					dotArray: [],
@@ -55,59 +59,118 @@ export function matchExportsAlias(node: uglify.AST_Node, isTopLevel: boolean): E
 		}
 
 		// [some exports style].[property]
-		var exportAlias: ExportsInfo = matchExportsAlias(nodeAccess.expression, isTopLevel);
+		var exportAlias: ExportsInfo = matchExportsAlias(f, nodeAccess.name, isTopLevel);
 		if (exportAlias) {
-			if (typeof nodeAccess.property === 'string') {
-				return {
-					style: exportAlias.style,
-					dotArray: exportAlias.dotArray.concat([<string>nodeAccess.property]),
-					exportAST: exportAlias.exportAST,
-					ast: nodeAccess
-				};
-			}
+			return {
+				style: exportAlias.style,
+				dotArray: exportAlias.dotArray.concat([nodeAccess.name.text]),
+				exportAST: exportAlias.exportAST,
+				ast: nodeAccess
+			};
 		}
 	}
 }
 
-export function walkAst(f: file.SourceFile) {
-	var impTopIndex = 0;
-	var expTopIndex = 0;
+type Scope = ts.SourceFile | ts.FunctionLikeDeclaration | ts.ClassLikeDeclaration;
 
-	var handleExportTopLevel = (exp: exportNode.Export, isTop: boolean) => {
-		exp.topLevel = isTop;
-		if (isTop) {
-			exp.topLevelIndex = expTopIndex++;
+class Walker {
+	node: ts.Node = undefined;
+	scope: Scope = undefined;
+	isConditional: boolean = false;
+	
+	walk(node: ts.Node) {
+		const saveNode = this.node;
+		const saveScope = this.scope;
+		const saveIsConditional = this.isConditional;
+		
+		this.node = node;
+		switch (node.kind) {
+			case ts.SyntaxKind.FunctionDeclaration:
+			case ts.SyntaxKind.FunctionExpression:
+			case ts.SyntaxKind.ClassDeclaration:
+			case ts.SyntaxKind.ClassExpression:
+				this.isConditional = true;
+				/* fall through */
+			case ts.SyntaxKind.SourceFile:
+				this.scope = <Scope> node;
+				break;
 		}
-	};
-
-	var walker = new uglify.TreeWalker((node: uglify.AST_Node, descend: () => void) => {
-		var isTop = walker.find_parent(uglify.AST_Lambda) ? false : true;
-
+		
+		if (!this.isConditional && node.parent) {
+			switch (node.parent.kind) {
+				case ts.SyntaxKind.IfStatement:
+					if (node === (<ts.IfStatement> node.parent).thenStatement || node === (<ts.IfStatement> node.parent).elseStatement) {
+						this.isConditional = true;
+					}
+					break;
+				case ts.SyntaxKind.ForStatement:
+				case ts.SyntaxKind.ForOfStatement:
+				case ts.SyntaxKind.ForInStatement:
+				case ts.SyntaxKind.WhileStatement:
+				case ts.SyntaxKind.DoStatement:
+					if ((<ts.IterationStatement> node.parent).statement === node) {
+						this.isConditional = true;
+					}
+					break;
+				case ts.SyntaxKind.BinaryExpression:
+					const expression = <ts.BinaryExpression> node.parent;
+					if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+						|| expression.operatorToken.kind === ts.SyntaxKind.BarBarToken) {
+						if (expression.right === node) {
+							this.isConditional = true;
+						}
+					}
+					break;
+			}
+		}
+		
+		this.visit(node);
+		
+		this.node = saveNode;
+		this.scope = saveScope;
+		this.isConditional = saveIsConditional;
+	}
+	
+	protected descent() {
+		ts.forEachChild(this.node, (node) => this.walk(node));
+	}
+	
+	protected visit(node: ts.Node) {
+		
+	}
+}
+class ParseWalker extends Walker {
+	importTopLevelIndex = 0;
+	exportTopLevelIndex = 0;
+	file: file.SourceFile;
+	
+	protected visit(node: ts.Node) {
 		// imports
-		if (node instanceof uglify.AST_Call) {
-			var nodeCall = <uglify.AST_Call> node;
+		if (node.kind === ts.SyntaxKind.CallExpression) {
+			var nodeCall = <ts.CallExpression> node;
 
-			if (nodeCall.expression instanceof uglify.AST_SymbolRef && nodeCall.args.length === 1) {
-				var funcVar = <uglify.AST_SymbolRef> nodeCall.expression;
+			if (nodeCall.expression.kind === ts.SyntaxKind.Identifier && nodeCall.arguments.length === 1) {
+				var funcVar = <ts.Identifier> nodeCall.expression;
 
-				if (funcVar.thedef.name === 'require' && funcVar.thedef.undeclared) {
-					var arg = nodeCall.args[0];
+				if (funcVar.text === 'require' && !isDefined(this.file, funcVar)) {
+					var arg = nodeCall.arguments[0];
 
-					if (!(arg instanceof uglify.AST_String)) {
-						throw new Error('Statements in require calls are not allowed.');
+					if (arg.kind !== ts.SyntaxKind.StringLiteral) {
+						throw new Error('Expressions other than string literals in require calls are not allowed.');
 					}
 
 					var imp: importNode.Import;
-					if (parent instanceof uglify.AST_VarDef) {
+					if (node.parent.kind === ts.SyntaxKind.VariableDeclaration
+						&& (<ts.VariableDeclaration> node.parent).name.kind === ts.SyntaxKind.Identifier) { // Don't allow destructuring here
 						// TODO: imports with properties, like var func require('name').someObj.someFunc;
-						var parentVar = <uglify.AST_VarDef> parent;
+						var parentVar = <ts.VariableDeclaration> node.parent;
 
 						var impSimple = new importNode.SimpleImport();
 
 						impSimple.ast = parentVar;
 						impSimple.importAst = nodeCall;
 						impSimple.dotArray = [];
-						impSimple.varAst = parentVar.name;
+						impSimple.symbol = this.file.types.getSymbolAtLocation(parentVar.name);
 
 						impSimple.safe = true;
 
@@ -120,115 +183,149 @@ export function walkAst(f: file.SourceFile) {
 						imp.safe = false;
 					}
 
-					imp.conditional = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody) || walker.find_parent(uglify.AST_Conditional) || walker.find_parent(uglify.AST_Binary)) ? false : true;
+					imp.conditional = this.isConditional;
+					// imp.conditional = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody) || walker.find_parent(uglify.AST_Conditional) || walker.find_parent(uglify.AST_Binary)) ? false : true;
 					imp.safe = imp.safe && !imp.conditional;
 
-					imp.topLevel = isTop;
-					if (isTop) {
-						imp.topLevelIndex = impTopIndex++;
+					imp.topLevel = !this.isConditional;
+					if (imp.topLevel) {
+						imp.topLevelIndex = this.importTopLevelIndex++;
 					}
-					imp.relativePath = (<uglify.AST_String>arg).value;
+					imp.relativePath = (<ts.StringLiteral> arg).text;
 
-					f.importNodes.push(imp);
-
-					// if (arg instanceof uglify.AST_String) {
-					// 	var argStr = <uglify.AST_String> arg;
-					// }
+					this.file.importNodes.push(imp);
 				}
 			}
 		}
 
 		// exports
-		var match = matchExportsAlias(node, isTop);
-		if (!match) return;
+		var match = matchExportsAlias(this.file, node, !this.isConditional);
+		if (match) {
+			if (node.parent.kind === ts.SyntaxKind.BinaryExpression && (<ts.BinaryExpression> node.parent).operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+				var parentAssign = <ts.BinaryExpression> node.parent;
+				if (match.dotArray.length === 0) {
+					if (match.style !== exportNode.Style.ModuleExports) {
+						throw new Error('Use "module.exports = " for export assignments instead of "exports = " or "this = "');
+					}
+					var expF = new exportNode.FullExport();
+					expF.style = match.style;
+					expF.ast = parentAssign;
+					expF.astLeft = <ts.PropertyAccessExpression> match.ast;
+					expF.exportAst = match.exportAST;
+					expF.astRight = parentAssign.right;
+					expF.symbolRight = (expF.astRight.kind === ts.SyntaxKind.Identifier) ? this.file.types.getSymbolAtLocation(expF.astRight) : undefined;
 
-		var parent: uglify.AST_Node = walker.parent();
+					expF.safe = !this.isConditional;
 
-		if (parent instanceof uglify.AST_Assign) {
-			var parentAssign = <uglify.AST_Assign> parent;
-			if (match.dotArray.length === 0) {
-				if (match.style !== exportNode.Style.ModuleExports) {
-					throw new Error('Use "module.exports = " for export assignments instead of "exports = " or "this = "');
+					this.handleExportTopLevel(expF);
+
+					this.file.exportNodes.push(expF);
+
+					return true;
+				} else {
+					var expS = new exportNode.SingleExport();
+					expS.style = match.style;
+					expS.ast = parentAssign;
+					expS.astLeft = <ts.PropertyAccessExpression> match.ast;
+					expS.exportAst = match.exportAST;
+					expS.astRight = parentAssign.right;
+					expS.symbolRight = (expS.astRight.kind === ts.SyntaxKind.Identifier) ? this.file.types.getSymbolAtLocation(expS.astRight) : undefined;
+
+					expS.dotArray = match.dotArray;
+
+					expS.safe = !this.isConditional;
+
+					this.handleExportTopLevel(expS);
+
+					this.file.exportNodes.push(expS);
+					return true;
 				}
-				var expF = new exportNode.FullExport();
-				expF.style = match.style;
-				expF.ast = parentAssign;
-				expF.astLeft = <uglify.AST_PropAccess> match.ast;
-				expF.exportAst = match.exportAST;
-				expF.astRight = parentAssign.right;
-
-				expF.safe = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody)) ? false : true;
-
-				handleExportTopLevel(expF, isTop);
-
-				f.exportNodes.push(expF);
-
-				return true;
 			} else {
-				var expS = new exportNode.SingleExport();
-				expS.style = match.style;
-				expS.ast = parentAssign;
-				expS.astLeft = <uglify.AST_PropAccess> match.ast;
-				expS.exportAst = match.exportAST;
-				expS.astRight = parentAssign.right;
-
-				expS.dotArray = match.dotArray;
-
-				expS.safe = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody)) ? false : true;
-
-				handleExportTopLevel(expS, isTop);
-
-				f.exportNodes.push(expS);
+				var expU = new exportNode.UnknownExport();
+				expU.style = match.style;
+				expU.ast = node;
+				expU.exportAst = match.exportAST;
+	
+				expU.safe = false;
+	
+				this.handleExportTopLevel(expU);
+	
+				this.file.exportNodes.push(expU);
 				return true;
 			}
-		} else {
-			var expU = new exportNode.UnknownExport();
-			expU.style = match.style;
-			expU.ast = node;
-			expU.exportAst = match.exportAST;
-
-			expU.safe = false;
-
-			handleExportTopLevel(expU, isTop);
-
-			f.exportNodes.push(expU);
-			return true;
 		}
-	});
-
-	var walkerSafety = new uglify.TreeWalker((node: uglify.AST_Node, descend: () => void) => {
+		this.descent();
+	}
+	
+	private handleExportTopLevel(node: exportNode.Export) {
+		node.topLevel = !this.isConditional;
+		if (node.topLevel) node.topLevelIndex = this.exportTopLevelIndex++;
+	}
+}
+class SafetyWalker extends Walker {
+	file: file.SourceFile;
+	
+	protected visit(node: ts.Node) {
 		// import
-		var def: uglify.SymbolDef;
+		
+		// TODO: def
+		var symbol: ts.Symbol;
+		//var def: uglify.SymbolDef;
 
-		if (node instanceof uglify.AST_VarDef) {
-			var nodeVarDef = <uglify.AST_VarDef> node;
-			def = (<uglify.AST_SymbolDeclaration> nodeVarDef.name).thedef;
-		} else if (node instanceof uglify.AST_Assign) {
-			var nodeAssign = <uglify.AST_Assign> node;
-			if (nodeAssign.left instanceof uglify.AST_SymbolVar) {
-				var nodeLeftVar = <uglify.AST_SymbolVar> nodeAssign.left;
-				def = nodeLeftVar.thedef;
+		if (node.kind === ts.SyntaxKind.VariableDeclaration) {
+			var nodeVarDef = <ts.VariableDeclaration> node;
+			if ((<ts.VariableDeclaration> node).initializer) {
+				symbol = this.file.types.getSymbolAtLocation(nodeVarDef.name);
+			}
+		} else if (node.kind === ts.SyntaxKind.BinaryExpression && (<ts.BinaryExpression>node).operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+			var nodeAssign = <ts.BinaryExpression> node;
+			if (nodeAssign.left.kind === ts.SyntaxKind.Identifier) {
+				var nodeLeftVar = <ts.Identifier> nodeAssign.left;
+				symbol = this.file.types.getSymbolAtLocation(nodeLeftVar);
 			}
 		}
+		
+		var symbolRef: ts.Symbol;
+		if (node.kind === ts.SyntaxKind.Identifier) {
+			symbolRef = this.file.types.getSymbolAtLocation(node);
+		}
 
-		if (def) {
-			for (var i = 0; i < f.importNodes.length; ++i) {
-				var imp = f.importNodes[i];
+		if (symbol || symbolRef) {
+			for (var i = 0; i < this.file.importNodes.length; ++i) {
+				var imp = this.file.importNodes[i];
 				if (imp instanceof importNode.SimpleImport) {
-					var impSimple = <importNode.SimpleImport> imp;
+					if (symbolRef && symbolRef === imp.symbol && node.parent !== imp.ast) {
+						imp.references.push(node);
+					}
+					
+					if (!imp.safe || !symbol) continue;
+					if (imp.symbol !== symbol) continue;
 
-					if (!impSimple.safe) continue;
-					if (impSimple.varAst.thedef !== def) continue;
+					if (imp.ast === node) continue;
 
-					if (impSimple.ast === node) continue;
-
-					impSimple.safe = false;
+					imp.safe = false;
+					break;
 				}
 			}
 		}
-	});
-	f.ast.walk(walker);
-	f.ast.walk(walkerSafety);
+		
+		
+		
+		this.descent();
+	};
+}
+
+export function walkAst(f: file.SourceFile) {
+	var impTopIndex = 0;
+	var expTopIndex = 0;
+	
+	var walker = new ParseWalker();
+	var walkerSafety = new SafetyWalker();
+	walker.file = f;
+	walkerSafety.file = f;
+	
+	walker.walk(f.ast);
+	walkerSafety.walk(f.ast);
 
 	// export safety
 	var unknownExps = f.getUnknownExportNodes();

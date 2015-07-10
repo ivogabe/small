@@ -1,7 +1,6 @@
 var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
-var rename = require('gulp-rename');
 
 var tsProject = ts.createProject({
 	noExternalResolve: true,
@@ -18,7 +17,7 @@ var paths = {
 
 gulp.task('compile', function() {
 	var tsResult =
-		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts'])
+		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts', 'node_modules/typescript/bin/typescript.d.ts'])
 			.pipe(ts(tsProject));
 
 	return tsResult.js.pipe(gulp.dest('release'));

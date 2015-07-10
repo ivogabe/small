@@ -1,5 +1,5 @@
 /// <reference path="../definitions/ref.d.ts" />
-import uglify = require('uglify-js');
+import ts = require('typescript');
 import importNode = require('./importNode');
 
 export enum Style {
@@ -11,8 +11,8 @@ export enum Style {
 export class Export {
 	style: Style;
 
-	ast: uglify.AST_Node;
-	exportAst: uglify.AST_Node;
+	ast: ts.Node;
+	exportAst: ts.Node;
 
 	importNode: importNode.SimpleImport;
 
@@ -22,35 +22,33 @@ export class Export {
 }
 
 export class SingleExport extends Export {
-	ast: uglify.AST_Assign;
-	astLeft: uglify.AST_PropAccess;
-	astRight: uglify.AST_Node;
+	ast: ts.BinaryExpression;
+	astLeft: ts.PropertyAccessExpression;
+	astRight: ts.Expression;
+	symbolRight: ts.Symbol;
 
 	dotArray: string[];
-
-	get def() {
-		return getDefFromNode(this.astRight);
-	}
 }
 
 export class FullExport extends Export {
 	style = Style.ModuleExports;
 
-	ast: uglify.AST_Assign;
-	astLeft: uglify.AST_PropAccess;
-	astRight: uglify.AST_Node;
-
-	get def() {
-		return getDefFromNode(this.astRight);
-	}
+	ast: ts.BinaryExpression;
+	astLeft: ts.PropertyAccessExpression;
+	astRight: ts.Expression;
+	symbolRight: ts.Symbol;
 }
 
-function getDefFromNode(ast: uglify.AST_Node): uglify.SymbolDef {
-	if (ast instanceof uglify.AST_SymbolRef) {
+/**
+ * Returns first declaration of a variable
+ */
+// function getDefFromNode(node: ts.VariableDeclaration): ts.VariableDeclaration {
+	/*if (ast instanceof uglify.AST_SymbolRef) {
 		return (<uglify.AST_SymbolRef> ast).thedef;
 	}
-	return undefined;
-}
+	return undefined;*/
+	// return false; // TODO: variableIsDefined
+// }
 
 /**
  * An export like:
