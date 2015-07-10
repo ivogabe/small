@@ -11,29 +11,21 @@ return exports;
 })();
 (function(exports) {
 
-var b = __small$_1;
-var d = __small$_3;
-exports.d = d;
+;
+;
+exports.d = __small$_3;
 
 
 })(__small$_2);
-var c = __small$_2;
-var d = __small$_3;
-exports.c = c;
-exports.d = d;
+;
+;
+exports.c = __small$_2;
+exports.d = __small$_3;
 
 
 })(__small$_1);
-// Dependencies:
-//  a -> b
-//  b -> c
-//  c -> b
-//  b -> d
-//  c -> d
-// Cycle: b -> c -> b
-
-var b = __small$_1;
-exports.b = b;
+;
+exports.b = __small$_1;
 
 return exports;
 })();
