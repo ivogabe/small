@@ -170,7 +170,7 @@ class ParseWalker extends Walker {
 						impSimple.ast = parentVar;
 						impSimple.importAst = nodeCall;
 						impSimple.dotArray = [];
-						impSimple.symbol = this.file.types.getSymbolAtLocation(parentVar);
+						impSimple.symbol = this.file.types.getSymbolAtLocation(parentVar.name);
 
 						impSimple.safe = true;
 
@@ -294,18 +294,16 @@ class SafetyWalker extends Walker {
 			for (var i = 0; i < this.file.importNodes.length; ++i) {
 				var imp = this.file.importNodes[i];
 				if (imp instanceof importNode.SimpleImport) {
-					var impSimple = <importNode.SimpleImport> imp;
-					
-					if (symbolRef && symbolRef === impSimple.symbol) {
-						impSimple.references.push(node);
+					if (symbolRef && symbolRef === imp.symbol && node.parent !== imp.ast) {
+						imp.references.push(node);
 					}
 					
-					if (!impSimple.safe || !symbol) continue;
-					if (impSimple.symbol !== symbol) continue;
+					if (!imp.safe || !symbol) continue;
+					if (imp.symbol !== symbol) continue;
 
-					if (impSimple.ast === node) continue;
+					if (imp.ast === node) continue;
 
-					impSimple.safe = false;
+					imp.safe = false;
 					break;
 				}
 			}

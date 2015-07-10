@@ -16,9 +16,9 @@ var exports = {};
 ;
 var document = __small$_mod_0;
 
-document.title = c;
+document.title = __small$_1;
 
-exports.c = c;
+exports.c = __small$_1;
 
 return exports;
 })());
@@ -26,17 +26,17 @@ return exports;
 var bar = 0;
 
 function hallo() {
-	this.c = c;
+	this.c = __small$_1;
 }
 var hoi = (function() {
-	this.c = c;
+	this.c = __small$_1;
 });
 
-__small$_moduleExports = c;
+__small$_moduleExports = __small$_1;
 __small$_moduleExports.b = b;
 
-if (b.c == c) {
-	console.log(c2);
+if (b.c == __small$_1) {
+	console.log(__small$_1);
 }
 
 return __small$_moduleExports;
