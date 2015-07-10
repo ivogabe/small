@@ -83,29 +83,11 @@ export class SourceFile {
 		return result;
 	}
 
-	setAllDependencies() {
-		this.allDependencies = [];
-		var helper = (other: SourceFile) => {
-			other.dependencies.forEach((dependency) => {
-				if (this.allDependencies.indexOf(dependency) === -1) {
-					this.allDependencies.push(dependency);
-					helper(dependency);
-				}
-			});
-		};
-
-		helper(this);
-	}
-
 	dependencies: SourceFile[] = [];
-	/**
-	 * Dependencies and dependencies of dependencies (of dependencies ...)
-	 */
-	allDependencies: SourceFile[];
 	dependants: SourceFile[] = [];
 	dependantImports: importNode.Import[] = [];
-
-	unhandledDependencies: SourceFile[] = [];
+	hasCircularDependencies: boolean = undefined;
+	connectedComponent: SourceFile[] = [];
 
 	conditional: boolean = undefined;
 

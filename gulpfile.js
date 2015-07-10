@@ -64,7 +64,18 @@ gulp.task('test-2', ['compile'], function() {
 		}))
 		.pipe(gulp.dest('examples/big'));
 });
-gulp.task('test', ['test-1', 'test-2']);
+gulp.task('test-3', ['compile'], function() {
+	var lib = require('./release/index');
+
+	return gulp.src(['examples/circular/**.js'])
+		.pipe(lib.gulp('a.js', {
+			outputFileName: {
+				standalone: 'output.standalone.js'
+			}
+		}))
+		.pipe(gulp.dest('examples/circular'));
+});
+gulp.task('test', ['test-1', 'test-2', 'test-3']);
 
 gulp.task('lint', function() {
 	return gulp.src([paths.lib + '/**.ts'])

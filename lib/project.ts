@@ -139,7 +139,6 @@ export class Project extends events.EventEmitter {
 					this._fileQueue--;
 					if (this._fileQueue === 0) {
 						this.emit('read');
-						this.setAllDependencies();
 						this.generateOrder();
 						this.generateStructure();
 						this.importSetOuputStyles();
@@ -205,7 +204,6 @@ export class Project extends events.EventEmitter {
 					queue--;
 
 					if (queue === 0) {
-						f.unhandledDependencies = [].concat(f.dependencies);
 						callback(undefined);
 						done = true;
 					}
@@ -225,11 +223,6 @@ export class Project extends events.EventEmitter {
 	resolveSingle(f: file.SourceFile, str: string): Promise<string> {
 		return resolve.resolve(this, f.file, str);
 	}
-	setAllDependencies() {
-		this.files.forEach((file) => {
-			file.setAllDependencies();
-		});
-	}
 	generateOrder() {
 		order.generateOrder(this);
 		this.emit('generatedOrder');
@@ -246,8 +239,12 @@ export class Project extends events.EventEmitter {
 					if (imp.file) imp.file.defined = true;
 					return;
 				}
-
-				if (imp.file.dependantImports.length === 1) {
+				
+				// Only use single when `imp.file` has no circular dependency with `f`, and `imp` is the only location
+				// where `imp.file` is imported.
+				if ((!imp.file.hasCircularDependencies
+					|| imp.file.connectedComponent.indexOf(f) === -1)
+					&& imp.file.dependantImports.length === 1) {
 					imp.outputStyle = importNode.OutputStyle.SINGLE;
 					imp.file.defined = true;
 					return;

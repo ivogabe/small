@@ -43,12 +43,29 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	var varModuleExports = p.options.varPrefix + 'moduleExports';
 
 	if (needsTwoExportVariables) {
-		top = 'var ' + varExports + ' = {}, ' + varModuleExports + ' = ' + varExports + ';';
-		bottom = 'return ' + varModuleExports + ';';
+		if (f.hasCircularDependencies) {
+			closureParameters.push({
+				name: varExports,
+				value: f.varName
+			});
+			top = 'var ' + varModuleExports + ' = ' + varExports + ';';
+			bottom = 'return ' + varModuleExports;
+		} else {
+			top = 'var ' + varExports + ' = {}, ' + varModuleExports + ' = ' + varExports + ';';
+			bottom = 'return ' + varModuleExports + ';';
+		}
 	} else {
-		top = 'var ' + varExports + ' = {};';
-		bottom = 'return ' + varExports + ';';
-		varModuleExports = varExports;
+		if (f.hasCircularDependencies) {
+			closureParameters.push({
+				name: varExports,
+				value: f.varName
+			});
+			if (fullExps.length > 0) bottom = 'return ' + varExports + ';';
+		} else {
+			top = 'var ' + varExports + ' = {};';
+			bottom = 'return ' + varExports + ';';
+			varModuleExports = varExports;
+		}
 	}
 
 	f.exportNodes.forEach((exp) => {
@@ -114,21 +131,42 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		}
 	});
 
-	var childTopId = 0;
+	var childTopId = 1;
+	var circularNames: string[] = [];
 	f.structureChildren.forEach((other) => {
 		if (!other.defined) {
+			if (other.hasCircularDependencies) circularNames.push(other.varName);
+			
+			let beforeFile = '';
+			
+			if (other.hasCircularDependencies) {
+				if (other.getFullExportNodes().length > 0) {
+					beforeFile = other.varName + ' = ';
+				}
+			} else {
+				beforeFile = 'var ' + other.varName + ' = ';
+			}
+			
 			replaces.push({
 				pos: 0,
 				endpos: 0,
 
 				secundarySort: childTopId++,
 
-				beforeFile: 'var ' + other.varName + ' = ',
+				beforeFile,
 				file: other,
 				afterFile: ';\n'
 			});
 		}
 	});
+	if (circularNames.length > 0) {
+		replaces.push({
+			pos: 0,
+			endpos: 0,
+			secundarySort: 0,
+			value: 'var ' + circularNames.join(' = {}, ') + ' = {};\n'
+		})
+	}
 
 	replaces.sort((a, b) => { // Sort ascending based on pos and secundarySort
 		if (a.pos === b.pos) {
@@ -141,7 +179,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			return b.pos - a.pos;
 		}
 	});
-
+	
 	f.rewriteData = {
 		replaces: replaces,
 		top: top,
