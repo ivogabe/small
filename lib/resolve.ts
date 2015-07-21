@@ -8,11 +8,6 @@ import Vinyl = require('vinyl');
 import browserBuiltins = require('browser-builtins');
 
 export function resolve(proj: project.Project, from: Vinyl, ref: string): Promise<string> {
-	/*var res = path.join(path.dirname(from), ref) + '.js';
-	process.nextTick(() => {
-		callback(undefined, res);
-	});*/
-
 	var resolver = new Resolver(proj.io, proj.options);
 	resolver.resolve(ref, from);
 
