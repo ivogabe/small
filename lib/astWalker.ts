@@ -184,7 +184,6 @@ class ParseWalker extends Walker {
 					}
 
 					imp.conditional = this.isConditional;
-					// imp.conditional = (walker.find_parent(uglify.AST_Block) || walker.find_parent(uglify.AST_StatementWithBody) || walker.find_parent(uglify.AST_Conditional) || walker.find_parent(uglify.AST_Binary)) ? false : true;
 					imp.safe = imp.safe && !imp.conditional;
 
 					imp.topLevel = !this.isConditional;
@@ -267,11 +266,8 @@ class SafetyWalker extends Walker {
 	
 	protected visit(node: ts.Node) {
 		// import
-		
-		// TODO: def
 		var symbol: ts.Symbol;
-		//var def: uglify.SymbolDef;
-
+		
 		if (node.kind === ts.SyntaxKind.VariableDeclaration) {
 			var nodeVarDef = <ts.VariableDeclaration> node;
 			if ((<ts.VariableDeclaration> node).initializer) {
@@ -308,8 +304,6 @@ class SafetyWalker extends Walker {
 				}
 			}
 		}
-		
-		
 		
 		this.descent();
 	};
