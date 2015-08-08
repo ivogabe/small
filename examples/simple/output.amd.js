@@ -1,5 +1,5 @@
 define(["document"], (function(__small$_mod_0) {
-var exports = {}, __small$_moduleExports = exports;
+var exports = {};
 var __small$_1 = (function() {
 var exports = {};
 function a() {
@@ -10,18 +10,19 @@ exports = 'Hello, World';
 
 return exports;
 })();
-var  foo = 0;
-var b = ((function() {
+var __small$_2 = (function() {
 var exports = {};
 ;
-var document = __small$_mod_0;
+;
 
-document.title = __small$_1;
+__small$_mod_0.title = __small$_1;
 
 exports.c = __small$_1;
 
 return exports;
-})());
+})();
+var  foo = 0;
+;
 
 var bar = 0;
 
@@ -32,12 +33,12 @@ var hoi = (function() {
 	this.c = __small$_1;
 });
 
-__small$_moduleExports = __small$_1;
-__small$_moduleExports.b = b;
+exports = __small$_1;
+exports.b = __small$_2;
 
-if (b.c == __small$_1) {
+if (__small$_2.c == __small$_1) {
 	console.log(__small$_1);
 }
 
-return __small$_moduleExports;
+return exports;
 }));
