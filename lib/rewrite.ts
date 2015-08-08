@@ -1,8 +1,6 @@
 import ts = require('typescript');
 import project = require('./project');
 import file = require('./file');
-import exportNode = require('./exportNode');
-import importNode = require('./importNode');
 
 export interface Replace {
 	pos: number;
@@ -33,20 +31,26 @@ interface RemovedVariableDeclaration {
 }
 
 export function rewriteFile(p: project.Project, f: file.SourceFile) {
-	var replaces: Replace[] = [];
+	const replaces: Replace[] = [];
 
-	var top: string = '';
-	var bottom: string = '';
-	var closureParameters: ClosureParameter[] = [];
+	let top: string = '';
+	let bottom: string = '';
+	const closureParameters: ClosureParameter[] = [];
 
-	var unknownExps = f.getUnknownExportNodes();
-	var singleExps = f.getSingleExportNodes();
-	var fullExps = f.getFullExportNodes();
+	let usesModuleExports = false;
+	let usesExports = false;
+	for (const exportNode of f.exportNodes) {
+		if (exportNode.isModuleExports) {
+			usesModuleExports = true;
+		} else {
+			usesExports = true;
+		}
+	}
 
-	var needsTwoExportVariables = (fullExps.length >= 1) && ((unknownExps.length >= 1) || (singleExps.length >= 1));
+	const needsTwoExportVariables = usesModuleExports && usesExports;
 
-	var varExports = 'exports';
-	var varModuleExports = p.options.varPrefix + 'moduleExports';
+	const varExports = 'exports';
+	let varModuleExports = p.options.varPrefix + 'moduleExports';
 
 	if (needsTwoExportVariables) {
 		if (f.hasCircularDependencies) {
@@ -66,7 +70,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				name: varExports,
 				value: f.varName
 			});
-			if (fullExps.length > 0) bottom = 'return ' + varExports + ';';
+			if (usesModuleExports) bottom = 'return ' + varExports + ';';
 		} else {
 			top = 'var ' + varExports + ' = {};';
 			bottom = 'return ' + varExports + ';';
@@ -74,13 +78,13 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		}
 	}
 
-	f.exportNodes.forEach((exp) => {
+	for (const exportNode of f.exportNodes) {
 		replaces.push({
-			pos: exp.exportAst.pos,
-			endpos: exp.exportAst.end,
-			value: (exp.style === exportNode.Style.ModuleExports) ? varModuleExports : varExports
+			pos: exportNode.ast.pos,
+			endpos: exportNode.ast.end,
+			value: exportNode.emit(varExports, varModuleExports)
 		});
-	});
+	}
 	
 	const removedVars: RemovedVariableDeclaration[] = [];
 	const removeVar = (declaration: ts.VariableDeclaration) => {
@@ -96,68 +100,32 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		});
 	};
 
-	f.importNodes.forEach((imp) => {
-		switch (imp.outputStyle) {
-			case importNode.OutputStyle.SINGLE:
-				replaces.push({
-					pos: imp.importAst.pos,
-					endpos: imp.importAst.end,
-
-					beforeFile: '(',
-					file: imp.file,
-					afterFile: ')'
-				});
-				return;
-			case importNode.OutputStyle.VAR_REFERENCE:
-				replaces.push({
-					pos: imp.importAst.pos,
-					endpos: imp.importAst.end,
-
-					value: imp.file ? imp.file.varName : imp.globalModule._varName
-				});
-				return;
-			case importNode.OutputStyle.VAR_ASSIGN:
-			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
-				replaces.push({
-					pos: imp.importAst.pos,
-					endpos: imp.importAst.end,
-
-					beforeFile: '(' + imp.file.varName + ' = ',
-					file: imp.file,
-					afterFile: ')'
-
-				});
-				break;
-		}
-
+	for (const imp of f.importNodes) {
+		const value = imp.emit();
 		
-
-		switch (imp.outputStyle) {
-			case importNode.OutputStyle.VAR_RENAME:
-				if (imp.ast.kind === ts.SyntaxKind.VariableDeclaration) {
-					removeVar(<ts.VariableDeclaration> imp.ast);
-				} else {
-					replaces.push({
-						pos: imp.ast.pos,
-						endpos: imp.ast.end,
+		if (value === '' && imp.ast.kind === ts.SyntaxKind.VariableDeclaration) {
+			removeVar(<ts.VariableDeclaration> imp.ast);
+		} else {
+			replaces.push({
+				pos: imp.ast.pos,
+				endpos: imp.ast.end,
 	
-						value: ''
-					});
-				}
-				/* fall through */
-			case importNode.OutputStyle.VAR_ASSIGN_AND_RENAME:
-				var impSimple = <importNode.SimpleImport> imp;
-				
-				impSimple.references.forEach((ref) => {
-					replaces.push({
-						pos: ref.pos,
-						endpos: ref.end,
-
-						value: imp.file.varName
-					});
-				});
+				value
+			});
 		}
-	});
+		
+		for (const reference of imp.references) {
+			const value = reference.emit();
+			if (value !== undefined) {
+				replaces.push({
+					pos: reference.ast.pos,
+					endpos: reference.ast.end,
+		
+					value
+				});
+			}
+		}
+	};
 	
 	for (const removed of removedVars) {
 		if (removed.list.declarations.length === removed.removedDeclarations.length) {
@@ -186,30 +154,31 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	var childTopId = 1;
 	var circularNames: string[] = [];
 	f.structureChildren.forEach((other) => {
-		if (!other.defined) {
-			if (other.hasCircularDependencies) circularNames.push(other.varName);
-			
-			let beforeFile = '';
-			
-			if (other.hasCircularDependencies) {
-				if (other.getFullExportNodes().length > 0) {
+		if (other.hasCircularDependencies) circularNames.push(other.varName);
+		
+		let beforeFile = '';
+		
+		if (other.hasCircularDependencies) {
+			for (const exportNode of f.exportNodes) {
+				if (exportNode.isModuleExports) {
 					beforeFile = other.varName + ' = ';
+					break;
 				}
-			} else {
-				beforeFile = 'var ' + other.varName + ' = ';
 			}
-			
-			replaces.push({
-				pos: 0,
-				endpos: 0,
-
-				secundarySort: childTopId++,
-
-				beforeFile,
-				file: other,
-				afterFile: ';\n'
-			});
+		} else {
+			beforeFile = 'var ' + other.varName + ' = ';
 		}
+		
+		replaces.push({
+			pos: 0,
+			endpos: 0,
+
+			secundarySort: childTopId++,
+
+			beforeFile,
+			file: other,
+			afterFile: ';\n'
+		});
 	});
 	if (circularNames.length > 0) {
 		replaces.push({

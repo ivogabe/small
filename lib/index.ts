@@ -9,8 +9,6 @@ export import Project = project.Project;
 export import ProjectOptions = project.ProjectOptions;
 
 export import io = require('./io');
-export import exportNode = require('./exportNode');
-export import importNode = require('./importNode');
 
 export function compile(startFile: string, options?: ProjectOptions, callback?: (err?) => void) {
 	var p = new project.Project(startFile, new io.NodeIO(), options);
