@@ -25,7 +25,8 @@
   "devDependencies": {
     "gulp": "^3.6.2",
     "gulp-tslint": "^1.1.0",
-    "gulp-typescript": "^2.7.6"
+    "gulp-typescript": "^2.8.0",
+    "typescript": "^1.5.3"
   },
   "main": "./release/index.js",
   "bin": {

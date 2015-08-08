@@ -5,8 +5,7 @@ var tslint = require('gulp-tslint');
 var tsProject = ts.createProject({
 	noExternalResolve: true,
 	target: 'es5',
-	module: 'commonjs',
-	typescript: require('typescript')
+	module: 'commonjs'
 });
 var tslintConfig = require('./tslint.json');
 
