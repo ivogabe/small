@@ -17,7 +17,9 @@ export class Parser {
 			getCurrentDirectory: () => '',
 			getCanonicalFileName: (fileName: string) => fileName,
 			useCaseSensitiveFileNames: () => true,
-			getNewLine: () => '\n\r'
+			getNewLine: () => '\n\r',
+			fileExists: fileName => fileName === file.filename,
+			readFile: fileName => fileName === file.filename ? file.source : undefined
 		};
 		const program = ts.createProgram([file.filename], { noResolve: true, noEmit: true, target: ts.ScriptTarget.Latest, allowNonTsExtensions: true }, host);
 		const typeChecker = program.getTypeChecker();

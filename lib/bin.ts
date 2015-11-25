@@ -4,13 +4,13 @@ import lib = require('./index');
 import commander = require('commander');
 import path = require('path');
 
-var package = require('../package');
+var packageJson = require('../package');
 
 function list(val) {
 	return val.split(',');
 }
 
-commander.version(package.version)
+commander.version(packageJson.version)
   .option('-i, --input <file>', 'The input filename.')
   .option('-o, --output <file>', 'The output filename.')
 

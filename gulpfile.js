@@ -2,11 +2,7 @@ var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
 
-var tsProject = ts.createProject({
-	noExternalResolve: true,
-	target: 'es5',
-	module: 'commonjs'
-});
+var tsProject = ts.createProject('lib/tsconfig.json');
 var tslintConfig = require('./tslint.json');
 
 var paths = {
