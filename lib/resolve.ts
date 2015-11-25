@@ -8,11 +8,6 @@ import Vinyl = require('vinyl');
 import browserBuiltins = require('browser-builtins');
 
 export function resolve(proj: project.Project, from: Vinyl, ref: string): Promise<string> {
-	/*var res = path.join(path.dirname(from), ref) + '.js';
-	process.nextTick(() => {
-		callback(undefined, res);
-	});*/
-
 	var resolver = new Resolver(proj.io, proj.options);
 	resolver.resolve(ref, from);
 
@@ -128,7 +123,7 @@ export class Resolver {
 
 		var dirs: string[] = [];
 
-		for (var i = parts.length - 1; i > root; --i) {
+		for (var i = parts.length - 1; i >= root - 1 && i >= 0; --i) {
 			if (this.options.modulesDirectories.indexOf(parts[i]) !== -1) continue;
 
 			var base = parts.slice(0, i + 1).join('/');

@@ -2,12 +2,13 @@
 
 import file = require('./file');
 import events = require('events');
+import { Parser } from './parser';
+import { Binder } from './binder';
 import resolve = require('./resolve');
 import order = require('./order');
 import structure = require('./structure');
 import rewrite = require('./rewrite');
 import bundle = require('./bundle');
-import importNode = require('./importNode');
 import io = require('./io');
 import Vinyl = require('vinyl');
 
@@ -114,6 +115,7 @@ export class Project extends events.EventEmitter {
 		this.startFile = this.addFile(this.startFileName);
 	}
 
+	private parser = new Parser();
 	private _fileQueue: number = 0;
 	addFile(filename: string): file.SourceFile {
 		var f = new file.SourceFile(filename);
@@ -127,10 +129,9 @@ export class Project extends events.EventEmitter {
 			if (this.failed) return;
 
 			f.file = source;
+			f.source = source.contents.toString();
 
-			f.parse(source.contents.toString('utf8'));
-
-			f.analyse();
+			this.parser.parse(f);
 
 			this.resolveFile(f, (err) => {
 				if (err) {
@@ -139,10 +140,9 @@ export class Project extends events.EventEmitter {
 					this._fileQueue--;
 					if (this._fileQueue === 0) {
 						this.emit('read');
-						this.setAllDependencies();
+						new Binder(this.files);
 						this.generateOrder();
 						this.generateStructure();
-						this.importSetOuputStyles();
 						this.rewrite();
 						this.bundle();
 						this.writeOutput();
@@ -188,30 +188,21 @@ export class Project extends events.EventEmitter {
 
 		imports.forEach((imp, i) => {
 			if (Object.prototype.hasOwnProperty.call(this.options.globalModules, imp.relativePath)) {
-				imp.globalModule = this.options.globalModules[imp.relativePath];
+				imp.targetGlobalModule = this.options.globalModules[imp.relativePath];
 			} else {
 				queue++;
 
 				this.resolveSingle(f, imp.relativePath).then(path => {
-					imp.absolutePath = path;
-					imp.file = this.getOrAddFile(imp.absolutePath);
-
-					if (f.dependencies.indexOf(imp.file) === -1) {
-						f.dependencies.push(imp.file);
-						imp.file.dependants.push(f);
-					}
-					imp.file.dependantImports.push(imp);
+					imp.targetFile = this.getOrAddFile(path);
 
 					queue--;
 
-					if (queue === 0) {
-						f.unhandledDependencies = [].concat(f.dependencies);
+					if (queue === 0 && !done) {
 						callback(undefined);
 						done = true;
 					}
 				}).catch((err) => {
 					this.failed = true;
-					f.failed = true;
 					done = true;
 					callback(err);
 				});
@@ -225,11 +216,6 @@ export class Project extends events.EventEmitter {
 	resolveSingle(f: file.SourceFile, str: string): Promise<string> {
 		return resolve.resolve(this, f.file, str);
 	}
-	setAllDependencies() {
-		this.files.forEach((file) => {
-			file.setAllDependencies();
-		});
-	}
 	generateOrder() {
 		order.generateOrder(this);
 		this.emit('generatedOrder');
@@ -237,41 +223,6 @@ export class Project extends events.EventEmitter {
 	generateStructure() {
 		structure.generateStructure(this);
 		this.emit('generatedStructure');
-	}
-	importSetOuputStyles() {
-		this.orderFiles.forEach((f) => {
-			f.importNodes.forEach((imp) => {
-				if (imp.globalModule) {
-					imp.outputStyle = importNode.OutputStyle.VAR_REFERENCE;
-					if (imp.file) imp.file.defined = true;
-					return;
-				}
-
-				if (imp.file.dependantImports.length === 1) {
-					imp.outputStyle = importNode.OutputStyle.SINGLE;
-					imp.file.defined = true;
-					return;
-				}
-
-				// TODO: Check whether it is secure to use VAR_ASSIGN or VAR_ASSIGN_AND_RENAME
-				/* if (imp.file.structureParent === f) {
-					if (f.importNodes.filter((item) => {
-						return item.file === imp.file;
-					})[0] === imp) {
-						imp.outputStyle = (imp instanceof importNode.SimpleImport) ? importNode.OutputStyle.VAR_ASSIGN_AND_RENAME : importNode.OutputStyle.VAR_ASSIGN;
-						imp.file.defined = true;
-						return;
-					}
-				} */
-
-				if (imp instanceof importNode.SimpleImport && imp.safe && (<importNode.SimpleImport>imp).dotArray.length === 0) {
-					imp.outputStyle = importNode.OutputStyle.VAR_RENAME;
-					return;
-				}
-
-				imp.outputStyle = importNode.OutputStyle.VAR_REFERENCE;
-			});
-		});
 	}
 	rewrite() {
 		this.files.forEach((f) => {
@@ -283,7 +234,7 @@ export class Project extends events.EventEmitter {
 		// Convert Dictionary to Array
 		var globalModules = Object.keys(this.options.globalModules).map(key => this.options.globalModules[key]);
 
-		var compiled = bundle.bundleFile(this, this.startFile, false, globalModules.map(mod => mod._varName));
+		var compiled = bundle.bundleFile(this, this.startFile, true, globalModules.map(mod => mod._varName));
 
 		var standaloneDeps = globalModules.map(mod => mod.standalone || mod.universal).join(', ');
 		var amdDeps = globalModules.map(mod => JSON.stringify(mod.amd || mod.universal)).join(', ');

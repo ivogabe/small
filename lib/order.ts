@@ -1,46 +1,70 @@
+/// <reference path="../definitions/ref.d.ts" />
+import { Graph, alg } from 'graphlib';
 import project = require('./project');
 import file = require('./file');
 
+interface FileInput {
+	file: file.SourceFile;
+	groupName: string;
+}
+interface FileGroup {
+	filenames: string[];
+}
+
 export function generateOrder(proj: project.Project) {
-	var unhandledFiles: file.SourceFile[] = [].concat(proj.files);
+	const inputGraph = new Graph<FileInput, {}>({ directed: true });
 
-	var prev: file.SourceFile;
-	var nextPrev: file.SourceFile;
-	var deleteIndex: number;
-	var ok: boolean;
+	for (const file of proj.files) {
+		inputGraph.setNode(file.filename, {
+			file,
+			groupName: undefined
+		});
+	}
 
-	var index = 0;
-
-	while (unhandledFiles.length !== 0) {
-		ok = false;
-
-		for (var i = 0; i < unhandledFiles.length; ++i) {
-			var f = unhandledFiles[i];
-
-			// Remove previous file from unhandled dependencies.
-			var ind = f.unhandledDependencies.indexOf(prev);
-			if (ind !== -1) f.unhandledDependencies.splice(ind, 1);
-
-			// If there are no unhandledDependencies
-			if (!ok && f.unhandledDependencies.length === 0) {
-				ok = true;
-				deleteIndex = i;
-				nextPrev = f;
-				f.orderIndex = index++;
-				proj.orderFiles.push(f);
-			}
+	for (const file of proj.files) {
+		for (const dependency of file.dependencies) {
+			inputGraph.setEdge(file.filename, dependency.filename);
 		}
+	}
 
-		prev = nextPrev;
+	const acyclicGraph = new Graph<FileGroup, {}>({ directed: true });
 
-		if (ok) {
-			unhandledFiles.splice(deleteIndex, 1);
-		} else {
-			// Circular dependencies
-			// TODO: Implement circular dependencies
-			proj.emit('error', Error('Circular dependencies are not yet supported'));
-			proj.failed = true;
-			return;
+	for (const group of alg.tarjan(inputGraph)) {
+		acyclicGraph.setNode(group[0], {
+			filenames: group
+		});
+
+		for (const member of group) {
+			inputGraph.node(member).groupName = group[0];
+		}
+	}
+
+	for (const filename of inputGraph.nodes()) {
+		const groupName = inputGraph.node(filename).groupName;
+		for (const edge of inputGraph.inEdges(filename)) {
+			const otherGroup = inputGraph.node(edge.w).groupName;
+			if (groupName !== otherGroup) acyclicGraph.setEdge(groupName, otherGroup);
+		}
+	}
+
+	const order = alg.topsort(acyclicGraph);
+	let index = 0;
+
+	for (const groupName of order) {
+		const group = acyclicGraph.node(groupName);
+		const component: file.SourceFile[] = [];
+		const cyclic = group.filenames.length !== 1;
+		for (const filename of group.filenames) {
+			const file = inputGraph.node(filename).file;
+			if (cyclic) {
+				file.hasCircularDependencies = true;
+				file.connectedComponent = component;
+				component.push(file);
+			} else {
+				file.hasCircularDependencies = false;
+			}
+			file.orderIndex = index++;
+			proj.orderFiles.push(file);
 		}
 	}
 }

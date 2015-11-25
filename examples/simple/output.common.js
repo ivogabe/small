@@ -1,5 +1,5 @@
 module.exports = (function(__small$_mod_0) {
-var exports = {}, __small$_moduleExports = exports;
+var exports = {};
 var __small$_1 = (function() {
 var exports = {};
 function a() {
@@ -10,34 +10,35 @@ exports = 'Hello, World';
 
 return exports;
 })();
-var c = __small$_1;
-var b = ((function() {
+var __small$_2 = (function() {
 var exports = {};
-var c = __small$_1;
-var document = __small$_mod_0;
+;
+;
 
-document.title = c;
+__small$_mod_0.title = __small$_1;
 
-exports.c = c;
+exports.c = __small$_1;
 
 return exports;
-})());
+})();
+var  foo = 0;
+;
 
-var c2 = __small$_1;
+var bar = 0;
 
 function hallo() {
-	this.c = c;
+	this.c = __small$_1;
 }
 var hoi = (function() {
-	this.c = c;
+	this.c = __small$_1;
 });
 
-__small$_moduleExports = c;
-__small$_moduleExports.b = b;
+exports = __small$_1;
+exports.b = __small$_2;
 
-if (b.c == c) {
-	console.log(c2);
+if (__small$_2.c == __small$_1) {
+	console.log(__small$_1);
 }
 
-return __small$_moduleExports;
+return exports;
 })(require("document"));

@@ -1,7 +1,7 @@
 import project = require('./project');
 import file = require('./file');
 
-export function bundleFile(p: project.Project, f: file.SourceFile, includeFunctionCall: boolean = true, parameters: string[] = []): string {
+export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boolean = false, parameters: string[] = []): string {
 	if (f.compiled) return f.compiled;
 
 	var compiled = f.source;
@@ -19,6 +19,8 @@ export function bundleFile(p: project.Project, f: file.SourceFile, includeFuncti
 		}
 	});
 
+	const includeFunctionCall = !isMain && !f.hasCircularDependencies;
+
 	f.compiled = '(function(' + parameters.join(', ') + ') {\n' + f.rewriteData.top + '\n' + compiled + '\n' + f.rewriteData.bottom + '\n})' + (includeFunctionCall ? '(' + getClosureParameterValues(p, f) + ')' : '');
 
 	return f.compiled;
@@ -28,6 +30,19 @@ export function getClosureParameterValues(p: project.Project, f: file.SourceFile
 	return f.rewriteData.closureParameters.map(param => param.value).join(', ');
 }
 
+function isWhitespace(char: string) {
+	switch (char) {
+		case ' ':
+		case '\r':
+		case '\n':
+		case '\t':
+			return true;
+	}
+	return false;
+}
 function replaceRange(f: file.SourceFile, str: string, start: number, end: number, substitute: string): string {
+	while (start < end && isWhitespace(str.substr(start, 1))) start++;
+	while (start < end && isWhitespace(str.substr(end - 1, 1))) end--;
+
 	return str.substring(0, start) + substitute + str.substring(end);
 }

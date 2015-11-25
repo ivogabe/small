@@ -1,13 +1,8 @@
 var gulp = require('gulp');
-var ts = require('gulp-type');
+var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
-var rename = require('gulp-rename');
 
-var tsProject = ts.createProject({
-	noExternalResolve: true,
-	target: 'es5',
-	module: 'commonjs'
-});
+var tsProject = ts.createProject('lib/tsconfig.json');
 var tslintConfig = require('./tslint.json');
 
 var paths = {
@@ -17,12 +12,10 @@ var paths = {
 
 gulp.task('compile', function() {
 	var tsResult =
-		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts'])
+		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts', 'node_modules/typescript/bin/typescript.d.ts'])
 			.pipe(ts(tsProject));
 
 	return tsResult.js.pipe(gulp.dest('release'));
-
-	//tsResult.js.pipe();
 });
 
 gulp.task('test-1', ['compile'], function() {
@@ -65,7 +58,18 @@ gulp.task('test-2', ['compile'], function() {
 		}))
 		.pipe(gulp.dest('examples/big'));
 });
-gulp.task('test', ['test-1', 'test-2']);
+gulp.task('test-3', ['compile'], function() {
+	var lib = require('./release/index');
+
+	return gulp.src(['examples/circular/**.js'])
+		.pipe(lib.gulp('a.js', {
+			outputFileName: {
+				standalone: 'output.standalone.js'
+			}
+		}))
+		.pipe(gulp.dest('examples/circular'));
+});
+gulp.task('test', ['test-1', 'test-2', 'test-3']);
 
 gulp.task('lint', function() {
 	return gulp.src([paths.lib + '/**.ts'])
