@@ -123,7 +123,7 @@ export class Resolver {
 
 		var dirs: string[] = [];
 
-		for (var i = parts.length - 1; i > root; --i) {
+		for (var i = parts.length - 1; i >= root - 1 && i >= 0; --i) {
 			if (this.options.modulesDirectories.indexOf(parts[i]) !== -1) continue;
 
 			var base = parts.slice(0, i + 1).join('/');
