@@ -13,32 +13,32 @@ interface FileGroup {
 
 export function generateOrder(proj: project.Project) {
 	const inputGraph = new Graph<FileInput, {}>({ directed: true });
-	
+
 	for (const file of proj.files) {
 		inputGraph.setNode(file.filename, {
 			file,
 			groupName: undefined
 		});
 	}
-	
+
 	for (const file of proj.files) {
 		for (const dependency of file.dependencies) {
 			inputGraph.setEdge(file.filename, dependency.filename);
 		}
 	}
-	
+
 	const acyclicGraph = new Graph<FileGroup, {}>({ directed: true });
-	
+
 	for (const group of alg.tarjan(inputGraph)) {
 		acyclicGraph.setNode(group[0], {
 			filenames: group
 		});
-		
+
 		for (const member of group) {
 			inputGraph.node(member).groupName = group[0];
 		}
 	}
-	
+
 	for (const filename of inputGraph.nodes()) {
 		const groupName = inputGraph.node(filename).groupName;
 		for (const edge of inputGraph.inEdges(filename)) {
@@ -46,10 +46,10 @@ export function generateOrder(proj: project.Project) {
 			if (groupName !== otherGroup) acyclicGraph.setEdge(groupName, otherGroup);
 		}
 	}
-	
+
 	const order = alg.topsort(acyclicGraph);
 	let index = 0;
-	
+
 	for (const groupName of order) {
 		const group = acyclicGraph.node(groupName);
 		const component: file.SourceFile[] = [];

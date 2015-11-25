@@ -132,7 +132,7 @@ export class Project extends events.EventEmitter {
 			f.source = source.contents.toString();
 
 			this.parser.parse(f);
-			
+
 			this.resolveFile(f, (err) => {
 				if (err) {
 					this.emit('error', err);

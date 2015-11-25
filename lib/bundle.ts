@@ -43,6 +43,6 @@ function isWhitespace(char: string) {
 function replaceRange(f: file.SourceFile, str: string, start: number, end: number, substitute: string): string {
 	while (start < end && isWhitespace(str.substr(start, 1))) start++;
 	while (start < end && isWhitespace(str.substr(end - 1, 1))) end--;
-	
+
 	return str.substring(0, start) + substitute + str.substring(end);
 }

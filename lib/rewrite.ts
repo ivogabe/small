@@ -74,7 +74,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			value: exportNode.emit(varExports, varModuleExports)
 		});
 	}
-	
+
 	const removedVars: RemovedVariableDeclaration[] = [];
 	const removeVar = (declaration: ts.VariableDeclaration) => {
 		for (const removed of removedVars) {
@@ -91,31 +91,31 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 
 	for (const imp of f.importNodes) {
 		const value = imp.emit();
-		
+
 		if (value === '' && imp.ast.kind === ts.SyntaxKind.VariableDeclaration) {
 			removeVar(<ts.VariableDeclaration> imp.ast);
 		} else {
 			replaces.push({
 				pos: imp.ast.pos,
 				endpos: imp.ast.end,
-	
+
 				value
 			});
 		}
-		
+
 		for (const reference of imp.references) {
 			const value = reference.emit();
 			if (value !== undefined) {
 				replaces.push({
 					pos: reference.ast.pos,
 					endpos: reference.ast.end,
-		
+
 					value
 				});
 			}
 		}
 	};
-	
+
 	for (const removed of removedVars) {
 		if (removed.list.declarations.length === removed.removedDeclarations.length) {
 			// All declarations are removed, so we can remove the full variable statement.
@@ -133,7 +133,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 				replaces.push({
 					pos: previous ? previous.end : declaration.pos,
 					endpos: next ? next.pos : declaration.end,
-	
+
 					value: ''
 				});
 			}
@@ -143,7 +143,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	var childTopId = 1;
 	for (const other of f.structureChildren) {
 		let beforeFile = 'var ' + other.varName + ' = ';
-		
+
 		replaces.push({
 			pos: 0,
 			endpos: 0,
@@ -167,7 +167,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 			return b.pos - a.pos;
 		}
 	});
-	
+
 	f.rewriteData = {
 		replaces: replaces,
 		top: top,

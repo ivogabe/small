@@ -7,7 +7,7 @@ import { ImportNode, ExportNode, ImportReference } from './node';
 export class Parser {
 	parse(file: SourceFile) {
 		const ast = ts.createSourceFile(file.filename, file.source, ts.ScriptTarget.Latest);
-		
+
 		const host: ts.CompilerHost = {
 			getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {
 				if (fileName === file.filename) return ast;
@@ -23,12 +23,12 @@ export class Parser {
 		};
 		const program = ts.createProgram([file.filename], { noResolve: true, noEmit: true, target: ts.ScriptTarget.Latest, allowNonTsExtensions: true }, host);
 		const typeChecker = program.getTypeChecker();
-		
+
 		const walker = new Walker();
-		
+
 		const importNodes: ImportNode[] = [];
 		const exportNodes: ExportNode[] = [];
-		
+
 		// Find import & export nodes.
 		walker.walk(ast, (child) => {
 			const importNode = ImportNode.tryParse(typeChecker, child);
@@ -40,13 +40,13 @@ export class Parser {
 			const exportNode = ExportNode.tryParse(typeChecker, child, walker.isInFunction);
 			if (exportNode) {
 				exportNodes.push(exportNode);
-				
+
 				if (exportNode.assignmentValue) walker.descend(exportNode.assignmentValue);
 				return;
 			}
 			walker.descend();
 		});
-		
+
 		// Find import references
 		walker.walk(ast, (child) => {
 			const reference = ImportReference.tryParse(typeChecker, importNodes, child);
@@ -56,7 +56,7 @@ export class Parser {
 				walker.descend();
 			}
 		});
-		
+
 		file.importNodes = importNodes;
 		file.exportNodes = exportNodes;
 	}
@@ -68,19 +68,19 @@ class Walker {
 	callback: (child: ts.Node) => void;
 	isConditional = false;
 	isInFunction = false;
-	
+
 	walk(node: ts.Node, callback: (child: ts.Node) => void) {
 		this.callback = callback;
 		this.visit(node);
 	}
-		
+
 	private visit(node: ts.Node) {
 		const saveNode = this.node;
 		const saveIsConditional = this.isConditional;
 		const saveIsInFunction = this.isInFunction;
-		
+
 		this.node = node;
-		
+
 		switch (node.kind) {
 			case ts.SyntaxKind.FunctionDeclaration:
 			case ts.SyntaxKind.FunctionExpression:
@@ -90,7 +90,7 @@ class Walker {
 				this.isInFunction = true;
 				break;
 		}
-		
+
 		if (!this.isConditional && node.parent) {
 			switch (node.parent.kind) {
 				case ts.SyntaxKind.IfStatement:
@@ -118,14 +118,14 @@ class Walker {
 					break;
 			}
 		}
-		
+
 		this.callback(node);
-		
+
 		this.node = saveNode;
 		this.isConditional = saveIsConditional;
 		this.isInFunction = saveIsInFunction;
 	}
-	
+
 	descend(node = this.node) {
 		ts.forEachChild(node, child => this.visit(child));
 	}

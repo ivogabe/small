@@ -5,7 +5,7 @@ import { PackageData } from './project';
 export class Binding {
 	declarations: ExportNode[] = undefined;
 	references: Node[] = [];
-	
+
 	constructor(declarations: ExportNode[]) {
 		this.declarations = declarations;
 	}
@@ -15,7 +15,7 @@ export class Node {
 	constructor(ast: ts.Node) {
 		this.ast = ast;
 	}
-	
+
 	file: SourceFile;
 	binding: Binding = undefined;
 	ast: ts.Node;
@@ -34,17 +34,17 @@ export class ExportNode extends Node {
 		} else if (ast.kind === ts.SyntaxKind.PropertyAccessExpression) {
 			const expression = (<ts.PropertyAccessExpression> ast).expression;
 			const name = (<ts.PropertyAccessExpression> ast).name.text;
-			
+
 			// Check for `module.exports`
 			if (expression.kind === ts.SyntaxKind.Identifier && (<ts.Identifier> expression).text === 'module' && name === 'exports' && checker.getTypeAtLocation(expression)) {
 				const node = new ExportNode(ast);
 				node.isModuleExports = true;
 				return node;
 			}
-			
+
 			// We wont parse things like `exports.foo.bar`.
 			if (disallowDots) return undefined;
-			
+
 			const parent = ExportNode.tryParse(checker, expression, insideFunction, true);
 			if (parent) {
 				parent.ast = ast;
@@ -79,7 +79,7 @@ export class ExportNode extends Node {
 		}
 		return undefined;
 	}
-	
+
 	/**
 	 * Assigned value when this node is an assignment, like `exports.foo = [..]` or `module.exports = [..]`
 	 */
@@ -93,20 +93,20 @@ export class ExportNode extends Node {
 	 */
 	isModuleExports = false;
 	name: string = undefined;
-	
+
 	emit(exportsVariable: string, moduleExportsVariable: string) {
 		let code: string;
-		
+
 		if (this.isModuleExports) {
 			code = moduleExportsVariable;
 		} else {
 			code = exportsVariable;
 		}
-		
+
 		if (this.name) {
 			code += '.' + this.name;
 		}
-		
+
 		return code;
 	}
 }
@@ -117,16 +117,16 @@ export class ImportNode extends Node {
 		if (ast.kind === ts.SyntaxKind.CallExpression) {
 			// require('foo');
 			if ((<ts.CallExpression> ast).arguments.length !== 1) return undefined;
-			
+
 			const expression = (<ts.CallExpression> ast).expression;
 			if (expression.kind !== ts.SyntaxKind.Identifier) return undefined;
 			if ((<ts.Identifier> expression).text !== 'require') return undefined;
 			if (checker.getSymbolAtLocation(expression) !== undefined) return undefined;
-			
+
 			const argument = (<ts.CallExpression> ast).arguments[0];
 			if (argument.kind !== ts.SyntaxKind.StringLiteral) return undefined;
 			const path = (<ts.StringLiteral> argument).text;
-			
+
 			const importNode = new ImportNode(ast);
 			importNode.relativePath = path;
 			return importNode;
@@ -142,10 +142,10 @@ export class ImportNode extends Node {
 			// Possible inputs:
 			// var foo = require('foo')
 			// var bar = require('foo').bar
-			
+
 			const variable = (<ts.VariableDeclaration> ast).name;
 			if (variable.kind !== ts.SyntaxKind.Identifier) return undefined;
-			
+
 			const parent = ImportNode.tryParse(checker, (<ts.VariableDeclaration> ast).initializer);
 			if (parent) {
 				parent.ast = ast;
@@ -155,9 +155,9 @@ export class ImportNode extends Node {
 		}
 		return undefined;
 	}
-	
+
 	references: ImportReference[] = [];
-	
+
 	/**
 	 * Symbol of the variable if the import is assigned to a variable.
 	 * For instance, `var foo = require('bar')`
@@ -174,7 +174,7 @@ export class ImportNode extends Node {
 	 * Example: The `dotArray` of `var a = require('b').c.d;` is `['c', 'd']`
 	 */
 	dotArray: string[] = [];
-	
+
 	getTargetVariable() {
 		if (this.targetFile) {
 			return this.targetFile.varName;
@@ -188,12 +188,12 @@ export class ImportNode extends Node {
 		if (circular) {
 			variable += '()';
 		}
-		
+
 		let property = '';
 		for (const item of this.dotArray) {
 			property += '.' + item;
 		}
-		
+
 		if (this.symbol) {
 			if (this.dotArray.length > 0) {
 				// Import looks like `var a = require('b').c.d`
@@ -237,7 +237,7 @@ export class ImportReference extends Node {
 		}
 		return undefined;
 	}
-	
+
 	constructor(ast: ts.Node, importNode: ImportNode, dotArray: string[] = []) {
 		super(ast);
 		this.importNode = importNode;
@@ -245,19 +245,19 @@ export class ImportReference extends Node {
 	}
 	importNode: ImportNode;
 	dotArray: string[];
-	
+
 	emit() {
 		const circular = this.importNode.targetFile && this.importNode.targetFile.hasCircularDependencies;
 		if (this.importNode.symbol && this.importNode.dotArray.length === 0 && !circular) {
 			// Rename the variable
-			
+
 			const variable = this.importNode.getTargetVariable();
-			
+
 			let property = '';
 			for (const item of this.dotArray) {
 				property += '.' + item;
 			}
-			
+
 			return variable + property;
 		}
 	}
