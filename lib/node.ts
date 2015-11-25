@@ -183,7 +183,11 @@ export class ImportNode extends Node {
 		}
 	}
 	emit() {
-		const variable = this.getTargetVariable();
+		let variable = this.getTargetVariable();
+		const circular = this.targetFile && this.targetFile.hasCircularDependencies;
+		if (circular) {
+			variable += '()';
+		}
 		
 		let property = '';
 		for (const item of this.dotArray) {
@@ -194,9 +198,11 @@ export class ImportNode extends Node {
 			if (this.dotArray.length > 0) {
 				// Import looks like `var a = require('b').c.d`
 				return this.symbol.name + ' = ' + variable + property;
+			} else if (circular) {
+				return this.symbol.name + ' = ' + variable;
 			} else {
-				// Import looks like `var a = require('b')`.
-				// We will rename `a` to the variable name of the target file
+				// Import looks like `var a = require('b')`, and it's not a circular dependency.
+				// We will rename `a` to the variable name of the target file.
 				return '';
 			}
 		} else {
@@ -241,7 +247,8 @@ export class ImportReference extends Node {
 	dotArray: string[];
 	
 	emit() {
-		if (this.importNode.symbol && this.importNode.dotArray.length === 0) {
+		const circular = this.importNode.targetFile && this.importNode.targetFile.hasCircularDependencies;
+		if (this.importNode.symbol && this.importNode.dotArray.length === 0 && !circular) {
 			// Rename the variable
 			
 			const variable = this.importNode.getTargetVariable();

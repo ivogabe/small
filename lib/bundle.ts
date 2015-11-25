@@ -1,7 +1,7 @@
 import project = require('./project');
 import file = require('./file');
 
-export function bundleFile(p: project.Project, f: file.SourceFile, includeFunctionCall: boolean = true, parameters: string[] = []): string {
+export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boolean = false, parameters: string[] = []): string {
 	if (f.compiled) return f.compiled;
 
 	var compiled = f.source;
@@ -18,6 +18,8 @@ export function bundleFile(p: project.Project, f: file.SourceFile, includeFuncti
 			compiled = replaceRange(f, compiled, replace.pos, replace.endpos, '');
 		}
 	});
+
+	const includeFunctionCall = !isMain && !f.hasCircularDependencies;
 
 	f.compiled = '(function(' + parameters.join(', ') + ') {\n' + f.rewriteData.top + '\n' + compiled + '\n' + f.rewriteData.bottom + '\n})' + (includeFunctionCall ? '(' + getClosureParameterValues(p, f) + ')' : '');
 

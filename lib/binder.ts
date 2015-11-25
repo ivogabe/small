@@ -1,5 +1,5 @@
 import { SourceFile } from './file';
-import { ImportNode, ImportReference, ExportNode, Binding } from './node';
+import { ImportNode, ExportNode, Binding } from './node';
 
 export class Binder {
 	private files: SourceFile[];

@@ -1,31 +1,39 @@
 (function() {
 var exports = {};
-var __small$_1 = {};
-(function(exports) {
-
-var __small$_2 = {};
+var __small$_1 = (function() {
+var exports = {};
+__small$_1 = function() { return exports; };
 var __small$_3 = (function() {
 var exports = {};
 exports.foo = true;
 return exports;
 })();
-(function(exports) {
-
-;
+var __small$_2 = (function() {
+var exports = {};
+__small$_2 = function() { return exports; };
+var b = __small$_1();
 ;
 exports.d = __small$_3;
 
-
-})(__small$_2);
+return exports;
+});
+var c = __small$_2();
 ;
-;
-exports.c = __small$_2;
+exports.c = c;
 exports.d = __small$_3;
 
+return exports;
+});
+// Dependencies:
+//  a -> b
+//  b -> c
+//  c -> b
+//  b -> d
+//  c -> d
+// Cycle: b -> c -> b
 
-})(__small$_1);
-;
-exports.b = __small$_1;
+var b = __small$_1();
+exports.b = b;
 
 return exports;
 })();

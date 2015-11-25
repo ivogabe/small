@@ -52,7 +52,7 @@ function findCommonParent(files: file.SourceFile[]): FindCommonParentResult {
 export function generateStructure(proj: project.Project) {
 	var files = proj.orderFiles;
 
-	for (var i = files.length - 1; i>=0; --i) {
+	for (var i = files.length - 1; i >= 0; --i) {
 		var f = files[i];
 
 		var commonParent = findCommonParent(f.dependants.filter((item) => {

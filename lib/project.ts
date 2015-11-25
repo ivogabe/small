@@ -234,7 +234,7 @@ export class Project extends events.EventEmitter {
 		// Convert Dictionary to Array
 		var globalModules = Object.keys(this.options.globalModules).map(key => this.options.globalModules[key]);
 
-		var compiled = bundle.bundleFile(this, this.startFile, false, globalModules.map(mod => mod._varName));
+		var compiled = bundle.bundleFile(this, this.startFile, true, globalModules.map(mod => mod._varName));
 
 		var standaloneDeps = globalModules.map(mod => mod.standalone || mod.universal).join(', ');
 		var amdDeps = globalModules.map(mod => JSON.stringify(mod.amd || mod.universal)).join(', ');
