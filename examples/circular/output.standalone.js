@@ -1,8 +1,5 @@
 (function() {
 var exports = {};
-var __small$_1 = (function() {
-var exports = {};
-__small$_1 = function() { return exports; };
 var __small$_3 = (function() {
 var exports = {};
 exports.foo = true;
@@ -17,6 +14,9 @@ exports.d = __small$_3;
 
 return exports;
 });
+var __small$_1 = (function() {
+var exports = {};
+__small$_1 = function() { return exports; };
 var c = __small$_2();
 ;
 exports.c = c;
