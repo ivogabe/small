@@ -120,9 +120,9 @@ Then you can do:
 var $ = require('$');
 ```
 
-**includeNode** (boolean) - Whether to include the node core packages, like ```path```.
-**modulesDirectories** (string[]) - Folder names which contain modules. Default: ```['node_modules']```. You can specify multiple names.
-**varPrefix** (string) - Small add some variables to the emitted code. These variables are prefixed with this prefix. Default: '__small$_'
+**includeNode** (boolean) - Whether to include the node core packages, like `path`.
+**modulesDirectories** (string[]) - Folder names which contain modules. Default: `['node_modules']`. You can specify multiple names.
+**varPrefix** (string) - Small add some variables to the emitted code. These variables are prefixed with this prefix. Default: `'__small$_'`.
 
 Loaders
 -------
@@ -143,7 +143,7 @@ gulp.task('scripts', function() {
 Small file size
 ---------------
 Small is designed to generate a small file size. Because of this, it might not work with all the projects. You can use it if:
-- You don't use expressions in ```require```, only string literals.
+- You don't use expressions in `require`, only string literals.
 - Your code doesn't modify globals (like String). If globals are modified, make sure every file that uses these changes also requires the file that modified the global.
 
 The following parts from CommonJS are not and (probably) won't be supported:
@@ -184,11 +184,11 @@ If a file is required more then once, it will be assigned to a variable like `__
 
 Include Node
 ------------
-Set the includeNode option to true and you can require the default modules (like path). Node's globals are not yet supported. 
+Set the `includeNode` option to `true` and you can require the default modules (like path). Node's globals (`__dirname`, `process`) are not yet supported. 
 
 Todo
 ----
-- Conditional imports (like if (...) require('...'))
+- Conditional imports (like `if (...) require('...')`)
 - Include node globals when includeNode is set
 
 License
