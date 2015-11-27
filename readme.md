@@ -52,6 +52,8 @@ Sourcemaps
 ----------
 The command line interface and Node api generate source maps by default. When using gulp, you can add [gulp-sourcemaps](https://www.npmjs.com/package/gulp-sourcemaps) to generate source maps:
 ```javascript
+var sourcemaps = require('gulp-sourcemaps');
+
 gulp.task('scripts', function() {
 	return gulp.src('lib/*.js')
 		.pipe(sourcemaps.init())
