@@ -15,7 +15,7 @@ Command line:
 ``` small -i index.js -o output.js ```
 (```small --help``` for more info)
 
-From node:
+From Node:
 ```javascript
 var small = require('small');
 small.compile('index.js', options, function(error) {
@@ -31,12 +31,25 @@ var small = require('small').gulp; // <-- notice the '.gulp' part
 gulp.task('scripts', function() {
 	return gulp.src('lib/*.js')
 		.pipe(small())
-		.pipe(gulp.dest('release'))
+		.pipe(gulp.dest('release'));
 });
 ```
 This will create a bundle, starting with `lib/index.js`. The output is saved as `release/index.js`. You can customize this using the fileName (defaults to `index.js`) and options parameters:
 ```javascript
 		.pipe(small('foo.js', options))
+```
+
+Sourcemaps
+----------
+The command line interface and Node api generate source maps by default. When using gulp, you can add [gulp-sourcemaps](https://www.npmjs.com/package/gulp-sourcemaps) to generate source maps:
+```javascript
+gulp.task('scripts', function() {
+	return gulp.src('lib/*.js')
+		.pipe(sourcemaps.init())
+		.pipe(small())
+		.pipe(sourcemaps.write())
+		.pipe(gulp.dest('release'));
+});
 ```
 
 Options
