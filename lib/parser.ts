@@ -7,6 +7,7 @@ import { ImportNode, ExportNode, ImportReference } from './node';
 export class Parser {
 	parse(file: SourceFile) {
 		const ast = ts.createSourceFile(file.filename, file.source, ts.ScriptTarget.Latest);
+		file.ast = ast;
 
 		const host: ts.CompilerHost = {
 			getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {

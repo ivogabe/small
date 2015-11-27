@@ -1,5 +1,6 @@
 /// <reference path="../definitions/ref.d.ts" />
 
+import * as sourceMap from 'source-map';
 import ts = require('typescript');
 import rewrite = require('./rewrite');
 import { ImportNode, ExportNode } from './node';
@@ -14,12 +15,13 @@ export class SourceFile {
 	varName: string;
 
 	file: vinyl.FileBuffer;
+	ast: ts.SourceFile;
 
 	rewriteData: rewrite.RewriteData;
 
 	filename: string;
 	source: string;
-	compiled: string;
+	compiled: sourceMap.SourceNode;
 
 	exportNodes: ExportNode[] = undefined;
 	importNodes: ImportNode[] = undefined;

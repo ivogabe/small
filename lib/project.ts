@@ -1,5 +1,7 @@
 /// <reference path="../definitions/ref.d.ts" />
 
+import * as sourceMap from 'source-map';
+import * as path from 'path';
 import file = require('./file');
 import events = require('events');
 import { Parser } from './parser';
@@ -12,11 +14,11 @@ import bundle = require('./bundle');
 import io = require('./io');
 import Vinyl = require('vinyl');
 
-export interface PackageData {
-	standalone?: string;
-	commonjs?: string;
-	amd?: string;
-	universal?: string;
+export interface PackageData<T> {
+	standalone?: T;
+	commonjs?: T;
+	amd?: T;
+	universal?: T;
 
 	_varName?: string;
 }
@@ -28,7 +30,7 @@ export interface ProjectOptions {
 	 */
 	alwaysLoadConditional?: boolean; // TODO: conditional imports
 
-	exportPackage?: PackageData;
+	exportPackage?: PackageData<string>;
 
 	/**
 	 * Whether to include the node core packages, like utils, http and buffer.
@@ -49,7 +51,7 @@ export interface ProjectOptions {
 	 * Then you can use require('doc') to get the document object.
 	 * Default: {}
 	 */
-	globalModules?: { [name: string]: PackageData };
+	globalModules?: { [name: string]: PackageData<string> };
 
 	/**
 	 * Whether to allow circular dependencies
@@ -69,7 +71,7 @@ export interface ProjectOptions {
 	 * Example:
 	 * { commonjs: 'output.commonjs.js', amd: 'output.amd.js', standalone: 'output.standalone.js' }
 	 */
-	outputFileName?: PackageData;
+	outputFileName?: PackageData<string>;
 }
 
 export class Project extends events.EventEmitter {
@@ -81,7 +83,7 @@ export class Project extends events.EventEmitter {
 
 	io: io.IIO;
 
-	compiled: PackageData = {};
+	compiled: PackageData<sourceMap.SourceNode> = {};
 
 	options: ProjectOptions;
 
@@ -234,7 +236,7 @@ export class Project extends events.EventEmitter {
 		// Convert Dictionary to Array
 		var globalModules = Object.keys(this.options.globalModules).map(key => this.options.globalModules[key]);
 
-		var compiled = bundle.bundleFile(this, this.startFile, true, globalModules.map(mod => mod._varName));
+		const compiled = bundle.bundleFile(this, this.startFile, true, globalModules.map(mod => mod._varName));
 
 		var standaloneDeps = globalModules.map(mod => mod.standalone || mod.universal).join(', ');
 		var amdDeps = globalModules.map(mod => JSON.stringify(mod.amd || mod.universal)).join(', ');
@@ -242,37 +244,36 @@ export class Project extends events.EventEmitter {
 
 		if (!this.options.exportPackage) this.options.exportPackage = {};
 
+		const wrap = (header: string, bottom: string) => {
+			return new sourceMap.SourceNode(null, null, null, [
+				header,
+				compiled,
+				bottom
+			]);
+		}
+
 		if (this.options.exportPackage.standalone !== undefined) {
-			this.compiled.standalone = this.options.exportPackage.standalone
+			let header = this.options.exportPackage.standalone + ' = ';
+			/* this.compiled.standalone = this.options.exportPackage.standalone
 				+ ' = '
-				+ compiled
-				+ '(' + standaloneDeps + ');';
+				+ code
+				+ '(' + standaloneDeps + ');'; */
 
 			if (this.options.exportPackage.standalone.indexOf('.') === -1) {
-				this.compiled.standalone = 'var ' + this.compiled.standalone;
+				header = 'var ' + header;
 			}
+			this.compiled.standalone = wrap(header, '(' + standaloneDeps + ');');
 		} else {
-			this.compiled.standalone = compiled
-				+ '('
-				+ standaloneDeps
-				+ ');';
+			this.compiled.standalone = wrap('', '(' + standaloneDeps + ');');
 		}
 
 		if (this.options.exportPackage.amd === undefined || this.options.exportPackage.amd === '') {
-			this.compiled.amd = 'define(['
-				+ amdDeps
-				+ '], ' + compiled
-				+ ');';
+			this.compiled.amd = wrap('define([' + amdDeps + '], ', ');');
 		} else {
-			this.compiled.amd = 'define('
-				+ JSON.stringify(this.options.exportPackage.amd)
-				+ ', ['
-				+ amdDeps
-				+ '], ' + compiled
-				+ ');';
+			this.compiled.amd = wrap('define(' + JSON.stringify(this.options.exportPackage.amd) + ', [' + amdDeps + '], ', ');');
 		}
 
-		this.compiled.commonjs = 'module.exports = ' + compiled + '(' + commonjsDeps + ');';
+		this.compiled.commonjs = wrap('module.exports = ', '(' + commonjsDeps + ');');
 
 		if (this.options.exportPackage.universal !== undefined) {
 			var universalAMD = this.options.exportPackage.universal;
@@ -285,23 +286,33 @@ export class Project extends events.EventEmitter {
 				universalStandalone = this.options.exportPackage.standalone;
 			}
 
-			this.compiled.universal = '(function(__root, __factory) { if (typeof define === "function" && define.amd) { '
+			this.compiled.universal = wrap(
+				// Header
+				'(function(__root, __factory) { if (typeof define === "function" && define.amd) { '
 				+ 'define(' + JSON.stringify(universalAMD) + ', [' + amdDeps + '], __factory);'
 				+ '} else if (typeof exports === "object") {'
 				+ 'module.exports = __factory(' + commonjsDeps + ');'
 				+ '} else {'
 				+ '__root[' + JSON.stringify(universalStandalone) + '] = __factory(' + standaloneDeps + ');'
 				+ '}'
-				+ '})(this, ' + compiled + ')';
+				+ '})(this, ',
+				// Bottom
+				');'
+			);
 		} else {
-			this.compiled.universal = '(function(__root, __factory) { if (typeof define === "function" && define.amd) { '
+			this.compiled.universal = wrap(
+				// Header
+				'(function(__root, __factory) { if (typeof define === "function" && define.amd) { '
 				+ 'define([' + amdDeps + '], __factory);'
 				+ '} else if (typeof exports === "object") {'
 				+ '__factory(' + commonjsDeps + ');'
 				+ '} else {'
 				+ '__factory(' + standaloneDeps + ');'
 				+ '}'
-				+ '})(this, ' + compiled + ')';
+				+ '})(this, ',
+				// Bottom
+				');'
+			);
 		}
 		this.emit('bundled');
 	}
@@ -310,16 +321,23 @@ export class Project extends events.EventEmitter {
 
 		var queue = 0;
 
-		var output = (filename, content) => {
-			var file = new Vinyl({
+		const output = (filename: string, content: sourceMap.SourceNode) => {
+			const { code, map } = content.toStringWithSourceMap();
+			const codeFile = new Vinyl({
 				path: filename,
 				cwd: this.startFile.file.cwd,
-				contents: new Buffer(content)
+				contents: new Buffer(code)
+			});
+			const mapFile = new Vinyl({
+				path: filename + '.map',
+				cwd: this.startFile.file.cwd,
+				contents: new Buffer(map.toString())
 			});
 
 			queue++;
 
-			this.io.writeFile(file).then(() => {
+			// TODO: Emit mapFile correctly
+			this.io.writeFile(codeFile, mapFile).then(() => {
 				queue--;
 
 				process.nextTick(() => {
