@@ -1,6 +1,7 @@
 /// <reference path="../definitions/ref.d.ts" />
 
 import Vinyl = require('vinyl');
+import * as sourceMap from 'source-map';
 import Promise = require('bluebird');
 import fs = require('fs');
 import stream = require('stream');
@@ -10,6 +11,10 @@ enum ReadOperation {
 	FILE_EXISTS,
 	DIRECTORY_EXISTS,
 	READ_FILE
+}
+
+interface VinylSourcemap extends Vinyl {
+	sourceMap?: sourceMap.RawSourceMap;
 }
 
 export function normalizePath(path: string) {
@@ -100,7 +105,7 @@ export class StreamIO extends events.EventEmitter implements IIO {
 		});
 	}
 
-	private _files: Vinyl[] = [];
+	private _files: VinylSourcemap[] = [];
 	private _queuedReads: QueuedRead[] = [];
 	private _finished: boolean;
 	stream: StreamIO.DuplexStream;
@@ -214,9 +219,17 @@ export class StreamIO extends events.EventEmitter implements IIO {
 		}
 	}
 
-	writeFile(file: Vinyl, sourceMapFile?: Vinyl.FileBuffer): Promise<boolean> {
+	writeFile(file: VinylSourcemap, sourceMapFile?: Vinyl.FileBuffer): Promise<boolean> {
 		if (sourceMapFile) {
-			(<any>file).sourceMap = JSON.parse(sourceMapFile.contents.toString());
+			let generator = sourceMap.SourceMapGenerator.fromSourceMap(
+				new sourceMap.SourceMapConsumer(JSON.parse(sourceMapFile.contents.toString()))
+			);
+			for (const source of this._files) {
+				if (source.sourceMap) {
+					generator.applySourceMap(new sourceMap.SourceMapConsumer(source.sourceMap));
+				}
+			}
+			file.sourceMap = JSON.parse(generator.toString());
 		}
 
 		this.stream.push(file);

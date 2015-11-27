@@ -322,7 +322,11 @@ export class Project extends events.EventEmitter {
 		var queue = 0;
 
 		const output = (filename: string, content: sourceMap.SourceNode) => {
-			const { code, map } = content.toStringWithSourceMap();
+			let { code, map } = content.toStringWithSourceMap();
+			code += '\n';
+			if (this.io.includeSourceMapComment) {
+				code += `//# sourceMappingURL=${ filename }.map\n`;
+			}
 			const codeFile = new Vinyl({
 				path: filename,
 				cwd: this.startFile.file.cwd,
@@ -336,7 +340,6 @@ export class Project extends events.EventEmitter {
 
 			queue++;
 
-			// TODO: Emit mapFile correctly
 			this.io.writeFile(codeFile, mapFile).then(() => {
 				queue--;
 
