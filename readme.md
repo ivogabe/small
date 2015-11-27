@@ -16,28 +16,49 @@ Command line:
 (```small --help``` for more info)
 
 From node:
-```
+```javascript
 var small = require('small');
-small.compile('filename.js', options, function(error) {
+small.compile('index.js', options, function(error) {
 	if (error) throw error;
 	console.log('Completed');
 });
 ```
 Or, as a gulp plugin:
-```
+```javascript
 var gulp = require('gulp');
 var small = require('small').gulp; // <-- notice the '.gulp' part
 
 gulp.task('scripts', function() {
 	return gulp.src('lib/*.js')
-		.pipe(small('index.js', options)) // start with lib/index.js
+		.pipe(small())
 		.pipe(gulp.dest('release'))
 });
+```
+This will create a bundle, starting with `lib/index.js`. The output is saved as `release/index.js`. You can customize this using the fileName (defaults to `index.js`) and options parameters:
+```javascript
+		.pipe(small('foo.js', options))
 ```
 
 Options
 -------
 ```options``` in the examples above is an object with these properties:
+
+**outputFileName** - The output filename(s). Example:
+```
+{
+	standalone: 'output.js',
+}
+```
+Or
+```
+{
+	commonjs: 'output.commonjs.js',
+	amd: 'output.amd.js',
+	standalone: 'output.standalone.js',
+	universal: 'output.universal.js'
+}
+```
+Default: `{ standalone: startFileName }`
 
 **exportPackage** - Export the package with the specified name. You can specify different names for different targets. Example:
 ```
@@ -75,22 +96,6 @@ Which is equal to
 Then you can do:
 ```
 var $ = require('$');
-```
-
-**outputFileName** - The output filename(s). Example:
-```
-{
-	standalone: 'output.js',
-}
-```
-Or
-```
-{
-	commonjs: 'output.commonjs.js',
-	amd: 'output.amd.js',
-	standalone: 'output.standalone.js',
-	universal: 'output.universal.js'
-}
 ```
 
 **includeNode** (boolean) - Whether to include the node core packages, like ```path```.
