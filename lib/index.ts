@@ -45,7 +45,7 @@ export function error(err: Error) {
 	console.error(message);
 }
 
-export function gulp(startFileName: string, options: GulpOptions = {}) {
+export function gulp(startFileName: string = 'index.js', options: GulpOptions = {}) {
 	var streamIO = new io.StreamIO();
 	var stream = streamIO.stream;
 
@@ -63,6 +63,9 @@ export function gulp(startFileName: string, options: GulpOptions = {}) {
 		usedIO = new io.HybridIO(streamIO, new io.NodeIO(), externalResolve, true);
 	} else {
 		usedIO = streamIO;
+	}
+	if (!options.outputFileName) {
+		options.outputFileName.standalone = startFileName;
 	}
 
 	var started = false;
@@ -97,6 +100,7 @@ export function gulp(startFileName: string, options: GulpOptions = {}) {
 		p.start();
 	};
 
+	const fileNames: string[] = [];
 	streamIO.on('addFile', (err, file: Vinyl) => {
 		if (file.isNull()) return;
 		if (file.isStream()) {
@@ -104,12 +108,13 @@ export function gulp(startFileName: string, options: GulpOptions = {}) {
 		}
 
 		if (file.relative === startFileName) {
+			fileNames.push(file.relative);
 			gulpCompile(file);
 		}
 	});
 	streamIO.on('end', () => {
 		if (!started) {
-			error(new Error('The start file was not found!'));
+			error(new Error('The start file was not found. Choose one of: ' + fileNames.join(', ')));
 		}
 	});
 
