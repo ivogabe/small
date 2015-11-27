@@ -3,6 +3,15 @@ Small
 
 Small is a CommonJS bundler that aims to generate the smallest bundle size. It supports commonjs files, and output as a standalone, commonjs, amd and universal package.
 
+Features
+--------
+
+- Bundles CommonJS files
+- Small file size
+- Source map
+- Supports circular dependencies
+- Fits into [gulp](https://www.npmjs.com/package/gulp) build system
+
 How to install
 --------------
 ``` npm instal small ```
@@ -134,11 +143,8 @@ gulp.task('scripts', function() {
 Small file size
 ---------------
 Small is designed to generate a small file size. Because of this, it might not work with all the projects. You can use it if:
-- You don't use expressions in ```require``` calls.
-- You don't use circular dependencies (eg a.js requires b.js and b.js requires a.js, circular dependencies will be supported in the future).
+- You don't use expressions in ```require```, only string literals.
 - Your code doesn't modify globals (like String). If globals are modified, make sure every file that uses these changes also requires the file that modified the global.
-
-Small is designed to be used with TypeScript and TypeScript's ```import``` and ```export``` statements, but it also works with normal JavaScript.
 
 The following parts from CommonJS are not and (probably) won't be supported:
 - module.id
@@ -157,7 +163,7 @@ Every module is wrapped in a closure. Every module looks like this:
 	return exports;
 })();
 ```
-If necessary, Small automaticly adds a module.exports variable (```__small$_moduleExports```), but first Small tries to replace ```module.exports``` (and toplevel ```this```) with ```exports```. If that's not safe, Small renames ```module.exports``` to ```__small$_moduleExports```.
+If necessary, Small automaticly adds a module.exports variable (`__small$_moduleExports`), but first Small tries to replace `module.exports` (and toplevel `this`) with `exports`. If that's not safe, Small renames `module.exports` to `__small$_moduleExports`.
 
 If possible, modules are placed in modules that use them, like this:
 ```
@@ -174,7 +180,7 @@ If possible, modules are placed in modules that use them, like this:
 ```
 This way it's the easiest for minifier to understand the code.
 
-If a file is required more then once, it will be assigned to a variable like ```__small$_1``` (but that name will be mangled if you use a minifier).
+If a file is required more then once, it will be assigned to a variable like `__small$_1` (but that name will be mangled if you use a minifier).
 
 Include Node
 ------------
@@ -182,9 +188,7 @@ Set the includeNode option to true and you can require the default modules (like
 
 Todo
 ----
-- Sourcemaps
 - Conditional imports (like if (...) require('...'))
-- Circular dependencies (depends on conditional imports)
 - Include node globals when includeNode is set
 
 License
