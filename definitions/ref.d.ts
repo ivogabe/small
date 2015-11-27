@@ -5,3 +5,4 @@
 /// <reference path="chalk.d.ts" />
 /// <reference path="browser-builtins.d.ts" />
 /// <reference path="graphlib.d.ts" />
+/// <reference path="source-map.d.ts" />

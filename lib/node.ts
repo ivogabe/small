@@ -168,7 +168,7 @@ export class ImportNode extends Node {
 	 */
 	relativePath: string = undefined;
 	targetFile: SourceFile = undefined;
-	targetGlobalModule: PackageData = undefined;
+	targetGlobalModule: PackageData<string> = undefined;
 	/**
 	 * Path of property access expressions after the `require` call.
 	 * Example: The `dotArray` of `var a = require('b').c.d;` is `['c', 'd']`

@@ -1,6 +1,7 @@
 /// <reference path="../definitions/ref.d.ts" />
 
 import Vinyl = require('vinyl');
+import * as sourceMap from 'source-map';
 import Promise = require('bluebird');
 import fs = require('fs');
 import stream = require('stream');
@@ -12,6 +13,10 @@ enum ReadOperation {
 	READ_FILE
 }
 
+interface VinylSourcemap extends Vinyl {
+	sourceMap?: sourceMap.RawSourceMap;
+}
+
 export function normalizePath(path: string) {
 	if (!path) return path;
 	return path.toLowerCase().replace(/\\/, '/');
@@ -21,14 +26,18 @@ export function pathsEqual(a: string, b: string) {
 }
 
 export interface IIO {
+	includeSourceMapComment: boolean;
+
 	fileExists: (path: string) => Promise<boolean>;
 	directoryExists: (path: string) => Promise<boolean>;
 
 	readFile: (path: string) => Promise<Vinyl.FileBuffer>;
-	writeFile: (file: Vinyl.FileBuffer) => Promise<boolean>;
+	writeFile: (file: Vinyl.FileBuffer, sourceMapFile?: Vinyl.FileBuffer) => Promise<boolean>;
 }
 
 export class NodeIO implements IIO {
+	includeSourceMapComment = true;
+
 	cwd: string;
 
 	constructor(cwd: string = process.cwd()) {
@@ -72,11 +81,11 @@ export class NodeIO implements IIO {
 		});
 	}
 
-	writeFile(file: Vinyl.FileBuffer): Promise<boolean> {
+	writeFile(file: Vinyl.FileBuffer, sourceMap?: Vinyl.FileBuffer): Promise<boolean> {
 		return new Promise<boolean>((resolve: (success) => void, reject) => {
 			fs.writeFile(file.path, file.contents, (err) => {
 				if (err) return reject(err);
-
+				if (sourceMap) resolve(this.writeFile(sourceMap));
 				resolve(true);
 			});
 		});
@@ -84,6 +93,8 @@ export class NodeIO implements IIO {
 }
 
 export class StreamIO extends events.EventEmitter implements IIO {
+	includeSourceMapComment = false;
+
 	constructor() {
 		super();
 
@@ -94,7 +105,7 @@ export class StreamIO extends events.EventEmitter implements IIO {
 		});
 	}
 
-	private _files: Vinyl[] = [];
+	private _files: VinylSourcemap[] = [];
 	private _queuedReads: QueuedRead[] = [];
 	private _finished: boolean;
 	stream: StreamIO.DuplexStream;
@@ -208,7 +219,19 @@ export class StreamIO extends events.EventEmitter implements IIO {
 		}
 	}
 
-	writeFile(file: Vinyl): Promise<boolean> {
+	writeFile(file: VinylSourcemap, sourceMapFile?: Vinyl.FileBuffer): Promise<boolean> {
+		if (sourceMapFile) {
+			let generator = sourceMap.SourceMapGenerator.fromSourceMap(
+				new sourceMap.SourceMapConsumer(JSON.parse(sourceMapFile.contents.toString()))
+			);
+			for (const source of this._files) {
+				if (source.sourceMap) {
+					generator.applySourceMap(new sourceMap.SourceMapConsumer(source.sourceMap));
+				}
+			}
+			file.sourceMap = JSON.parse(generator.toString());
+		}
+
 		this.stream.push(file);
 		return Promise.resolve(true);
 	}
@@ -256,13 +279,16 @@ interface QueuedRead {
 	resolve: (res: any) => void;
 }
 
-export class HybridIO {
+export class HybridIO implements IIO {
 	constructor(mainIO: IIO, altIO: IIO, altPaths: string[], altReadOnly = false) {
 		this.mainIO = mainIO;
 		this.altIO = altIO;
 		this.altPaths = altPaths;
 		this.altReadOnly = altReadOnly;
+		this.includeSourceMapComment = mainIO.includeSourceMapComment;
 	}
+
+	includeSourceMapComment: boolean;
 	mainIO: IIO;
 	altIO: IIO;
 	altPaths: string[];
@@ -298,11 +324,11 @@ export class HybridIO {
 			return this.mainIO.readFile(path);
 		}
 	}
-	writeFile(file: Vinyl.FileBuffer): Promise<boolean> {
+	writeFile(file: Vinyl.FileBuffer, sourceMapFile?: Vinyl.FileBuffer): Promise<boolean> {
 		if (this.needsAltIO(file.path) && !this.altReadOnly) {
-			return this.altIO.writeFile(file);
+			return this.altIO.writeFile(file, sourceMapFile);
 		} else {
-			return this.mainIO.writeFile(file);
+			return this.mainIO.writeFile(file, sourceMapFile);
 		}
 	}
 }

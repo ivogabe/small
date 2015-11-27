@@ -42,3 +42,5 @@ if (__small$_2.c == __small$_1) {
 
 return exports;
 })(document);
+
+//# sourceMappingURL=output.standalone.js.map

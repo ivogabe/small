@@ -37,3 +37,5 @@ exports.b = b;
 
 return exports;
 })();
+
+//# sourceMappingURL=output.standalone.js.map

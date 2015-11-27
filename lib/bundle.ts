@@ -1,27 +1,93 @@
+import { SourceNode, Position } from 'source-map';
+import * as typescript from 'typescript';
 import project = require('./project');
 import file = require('./file');
 
-export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boolean = false, parameters: string[] = []): string {
+export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boolean = false, parameters: string[] = []): SourceNode {
 	if (f.compiled) return f.compiled;
 
-	var compiled = f.source;
 	var replaces = f.rewriteData.replaces;
 
 	parameters = f.rewriteData.closureParameters.map(param => param.name).concat(parameters);
 
-	replaces.forEach((replace) => {
-		if (replace.value) {
-			compiled = replaceRange(f, compiled, replace.pos, replace.endpos, replace.value);
-		} else if (replace.file) {
-			compiled = replaceRange(f, compiled, replace.pos, replace.endpos, replace.beforeFile + bundleFile(p, replace.file) + replace.afterFile);
-		} else {
-			compiled = replaceRange(f, compiled, replace.pos, replace.endpos, '');
+	const content: (SourceNode)[] = [];
+	let cursor = 0;
+
+	function getPosition(index: number): Position {
+		const { line, character } = typescript.getLineAndCharacterOfPosition(f.ast, index);
+		return {
+			line: line + 1,
+			column: character
+		};
+	}
+	function addSourceText(end: number) {
+		function addLine(lineEnd: number) {
+			const text = f.source.substring(cursor, lineEnd);
+			const { line, column } = getPosition(cursor);
+			content.push(new SourceNode(
+				line,
+				column,
+				f.file.relative,
+				text
+			));
+			cursor = lineEnd;
 		}
-	});
+		while (cursor < end) {
+			const lineEnd = f.source.indexOf('\n', cursor);
+			const sectionEnd = lineEnd === -1 ? end : Math.min(lineEnd + 1, end);
+			addLine(sectionEnd);
+		}
+
+		if (cursor !== end) return;
+	}
+	function addEmptyNode() {
+		const { line, column } = getPosition(cursor);
+		content.push(new SourceNode(
+			line,
+			column,
+			f.file.relative
+		));
+	}
+	function addGeneratedText(text: string) {
+		content.push(new SourceNode(
+			null,
+			null,
+			null,
+			text
+		));
+	}
+
+	for (const replace of replaces) {
+		const [start, end] = collapseRange(f.source, replace.pos, replace.endpos);
+		addSourceText(start);
+		if (replace.value !== undefined) {
+			const { line, column } = getPosition(cursor);
+			content.push(new SourceNode(
+				line,
+				column,
+				f.file.relative,
+				replace.value
+			));
+			addEmptyNode();
+		} else if (replace.file !== undefined) {
+			addEmptyNode();
+			addGeneratedText(replace.beforeFile);
+			content.push(bundleFile(p, replace.file));
+			addGeneratedText(replace.afterFile);
+			addEmptyNode();
+		}
+		cursor = end;
+	}
+	addSourceText(f.source.length);
 
 	const includeFunctionCall = !isMain && !f.hasCircularDependencies;
 
-	f.compiled = '(function(' + parameters.join(', ') + ') {\n' + f.rewriteData.top + '\n' + compiled + '\n' + f.rewriteData.bottom + '\n})' + (includeFunctionCall ? '(' + getClosureParameterValues(p, f) + ')' : '');
+	// Add to top
+	content.splice(0, 0, new SourceNode(null, null, null, '(function(' + parameters.join(', ') + ') {\n' + f.rewriteData.top + '\n'));
+	// Add below file
+	addGeneratedText('\n' + f.rewriteData.bottom + '\n})' + (includeFunctionCall ? '(' + getClosureParameterValues(p, f) + ')' : ''));
+
+	f.compiled = new SourceNode(null, null, null, content);
 
 	return f.compiled;
 }
@@ -40,9 +106,9 @@ function isWhitespace(char: string) {
 	}
 	return false;
 }
-function replaceRange(f: file.SourceFile, str: string, start: number, end: number, substitute: string): string {
+function collapseRange(str: string, start: number, end: number): [number, number] {
 	while (start < end && isWhitespace(str.substr(start, 1))) start++;
 	while (start < end && isWhitespace(str.substr(end - 1, 1))) end--;
 
-	return str.substring(0, start) + substitute + str.substring(end);
+	return [start, end];
 }

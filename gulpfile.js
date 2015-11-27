@@ -1,6 +1,7 @@
 var gulp = require('gulp');
 var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
+var sourcemaps = require('gulp-sourcemaps');
 
 var tsProject = ts.createProject('lib/tsconfig.json');
 var tslintConfig = require('./tslint.json');
@@ -22,6 +23,7 @@ gulp.task('test-1', ['compile'], function() {
 	var lib = require('./release/index');
 
 	return gulp.src(['examples/simple/**.js'])
+		.pipe(sourcemaps.init())
 		.pipe(lib.gulp('a.js', {
 			outputFileName: {
 				commonjs: 'output.common.js',
@@ -42,12 +44,14 @@ gulp.task('test-1', ['compile'], function() {
 			],
 			includeNode: true
 		}))
+		.pipe(sourcemaps.write('.'))
 		.pipe(gulp.dest('examples/simple'));
 });
 gulp.task('test-2', ['compile'], function() {
 	var lib = require('./release/index');
 
 	return gulp.src(['examples/big/**.js'])
+		.pipe(sourcemaps.init())
 		.pipe(lib.gulp('turpis.js', {
 			outputFileName: {
 				commonjs: 'output.common.js',
@@ -56,17 +60,20 @@ gulp.task('test-2', ['compile'], function() {
 				universal: 'output.universal.js'
 			}
 		}))
+		.pipe(sourcemaps.write('.'))
 		.pipe(gulp.dest('examples/big'));
 });
 gulp.task('test-3', ['compile'], function() {
 	var lib = require('./release/index');
 
 	return gulp.src(['examples/circular/**.js'])
+		.pipe(sourcemaps.init())
 		.pipe(lib.gulp('a.js', {
 			outputFileName: {
 				standalone: 'output.standalone.js'
 			}
 		}))
+		.pipe(sourcemaps.write('.'))
 		.pipe(gulp.dest('examples/circular'));
 });
 gulp.task('test', ['test-1', 'test-2', 'test-3']);

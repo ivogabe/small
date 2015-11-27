@@ -159,12 +159,12 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	replaces.sort((a, b) => { // Sort ascending based on pos and secundarySort
 		if (a.pos === b.pos) {
 			if (a.endpos === b.endpos) {
-				return b.secundarySort - a.secundarySort;
+				return a.secundarySort - b.secundarySort;
 			} else {
-				return b.endpos - a.endpos;
+				return a.endpos - b.endpos;
 			}
 		} else {
-			return b.pos - a.pos;
+			return a.pos - b.pos;
 		}
 	});
 
