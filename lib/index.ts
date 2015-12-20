@@ -65,7 +65,9 @@ export function gulp(startFileName: string = 'index.js', options: GulpOptions = 
 		usedIO = streamIO;
 	}
 	if (!options.outputFileName) {
-		options.outputFileName.standalone = startFileName;
+		options.outputFileName = {
+			standalone: startFileName
+		};
 	}
 
 	var started = false;
