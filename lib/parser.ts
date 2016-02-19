@@ -42,7 +42,7 @@ export class Parser {
 			if (exportNode) {
 				exportNodes.push(exportNode);
 
-				if (exportNode.assignmentValue) walker.descend(exportNode.assignmentValue);
+				if (exportNode.assignmentValue) walker.visit(exportNode.assignmentValue);
 				return;
 			}
 			walker.descend();
@@ -75,7 +75,8 @@ class Walker {
 		this.visit(node);
 	}
 
-	private visit(node: ts.Node) {
+	visit(node: ts.Node) {
+		if (!node) return;
 		const saveNode = this.node;
 		const saveIsConditional = this.isConditional;
 		const saveIsInFunction = this.isInFunction;
