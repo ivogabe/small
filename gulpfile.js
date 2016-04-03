@@ -22,7 +22,7 @@ gulp.task('compile', function() {
 gulp.task('test-1', ['compile'], function() {
 	var lib = require('./release/index');
 
-	return gulp.src(['examples/simple/**.js'])
+	return gulp.src(['examples/simple/**.js', 'examples/simple/**.json'])
 		.pipe(sourcemaps.init())
 		.pipe(lib.gulp('a.js', {
 			outputFileName: {

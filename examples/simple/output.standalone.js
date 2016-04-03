@@ -21,7 +21,15 @@ exports.c = __small$_1;
 
 return exports;
 })();
+var __small$_3 = (function() {
+return (
+{
+	"x": "y"
+}
+);
+})();
 var  foo = 0;
+;
 ;
 
 var bar = 0;
@@ -37,7 +45,7 @@ exports = __small$_1;
 exports.b = __small$_2;
 
 if (__small$_2.c == __small$_1) {
-	console.log(__small$_1);
+	console.log(__small$_1, __small$_3);
 }
 
 return exports;

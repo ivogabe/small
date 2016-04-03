@@ -56,7 +56,8 @@ export class Resolver {
 	resolveFile(filename: string, failCallback?: () => void) {
 		this.tryFiles([
 			filename,
-			filename + '.js'
+			filename + '.js',
+			filename + '.json'
 		], () => {
 			this.resolveDirectory(filename, failCallback);
 		});

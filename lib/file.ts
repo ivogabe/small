@@ -9,6 +9,7 @@ import vinyl = require('vinyl');
 export class SourceFile {
 	constructor(filename: string) {
 		this.filename = filename;
+		this.isJson = filename.substr(-5).toLowerCase() === ".json";
 	}
 
 	id: number;
@@ -20,6 +21,7 @@ export class SourceFile {
 	rewriteData: rewrite.RewriteData;
 
 	filename: string;
+	isJson: boolean;
 	source: string;
 	compiled: sourceMap.SourceNode;
 

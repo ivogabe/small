@@ -52,7 +52,10 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	const varExports = 'exports';
 	let varModuleExports = p.options.varPrefix + 'moduleExports';
 
-	if (needsTwoExportVariables) {
+	if (f.isJson) {
+		top = 'return (';
+		bottom = ');';
+	} else if (needsTwoExportVariables) {
 		top = 'var ' + varExports + ' = {}, ' + varModuleExports + ' = ' + varExports + ';';
 		bottom = 'return ' + varModuleExports + ';';
 	} else {
