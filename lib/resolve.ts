@@ -64,10 +64,11 @@ export class Resolver {
 	}
 	resolveDirectory(pathStr: string, failCallback: () => void = () => this.notFound()) {
 		this.parseJSONFile(path.join(pathStr, 'package.json')).then(json => {
-			if (json['main']) {
+			const main = json['browser'] || json['main'];
+			if (main) {
 				this.tryFiles([
-					path.join(pathStr, json['main']) + '.js',
-					path.join(pathStr, json['main']),
+					path.join(pathStr, main) + '.js',
+					path.join(pathStr, main),
 					path.join(pathStr, 'index.js')
 				], failCallback);
 			} else {
