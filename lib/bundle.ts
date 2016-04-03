@@ -58,8 +58,7 @@ export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boole
 	}
 
 	for (const replace of replaces) {
-		const [start, end] = collapseRange(f.source, replace.pos, replace.endpos);
-		addSourceText(start);
+		addSourceText(replace.pos);
 		if (replace.value !== undefined) {
 			const { line, column } = getPosition(cursor);
 			content.push(new SourceNode(
@@ -76,7 +75,7 @@ export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boole
 			addGeneratedText(replace.afterFile);
 			addEmptyNode();
 		}
-		cursor = end;
+		cursor = replace.endpos;
 	}
 	addSourceText(f.source.length);
 
@@ -94,21 +93,4 @@ export function bundleFile(p: project.Project, f: file.SourceFile, isMain: boole
 
 export function getClosureParameterValues(p: project.Project, f: file.SourceFile): string {
 	return f.rewriteData.closureParameters.map(param => param.value).join(', ');
-}
-
-function isWhitespace(char: string) {
-	switch (char) {
-		case ' ':
-		case '\r':
-		case '\n':
-		case '\t':
-			return true;
-	}
-	return false;
-}
-function collapseRange(str: string, start: number, end: number): [number, number] {
-	while (start < end && isWhitespace(str.substr(start, 1))) start++;
-	while (start < end && isWhitespace(str.substr(end - 1, 1))) end--;
-
-	return [start, end];
 }

@@ -32,6 +32,13 @@ interface RemovedVariableDeclaration {
 
 export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	const replaces: Replace[] = [];
+	const replace = (ast: ts.Node, value: string) => {
+		replaces.push({
+			pos: ast.getStart(f.ast),
+			endpos: ast.getEnd(),
+			value
+		});
+	};
 
 	let top: string = '';
 	let bottom: string = '';
@@ -71,11 +78,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	}
 
 	for (const exportNode of f.exportNodes) {
-		replaces.push({
-			pos: exportNode.ast.pos,
-			endpos: exportNode.ast.end,
-			value: exportNode.emit(varExports, varModuleExports)
-		});
+		replace(exportNode.ast, exportNode.emit(varExports, varModuleExports));
 	}
 
 	const removedVars: RemovedVariableDeclaration[] = [];
@@ -98,23 +101,13 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 		if (value === '' && imp.ast.kind === ts.SyntaxKind.VariableDeclaration) {
 			removeVar(<ts.VariableDeclaration> imp.ast);
 		} else {
-			replaces.push({
-				pos: imp.ast.pos,
-				endpos: imp.ast.end,
-
-				value
-			});
+			replace(imp.ast, value);
 		}
 
 		for (const reference of imp.references) {
 			const value = reference.emit();
 			if (value !== undefined) {
-				replaces.push({
-					pos: reference.ast.pos,
-					endpos: reference.ast.end,
-
-					value
-				});
+				replace(reference.ast, value);
 			}
 		}
 	};
@@ -122,12 +115,7 @@ export function rewriteFile(p: project.Project, f: file.SourceFile) {
 	for (const removed of removedVars) {
 		if (removed.list.declarations.length === removed.removedDeclarations.length) {
 			// All declarations are removed, so we can remove the full variable statement.
-			replaces.push({
-				pos: removed.list.pos,
-				endpos: removed.list.end,
-
-				value: ''
-			});
+			replace(removed.list, '');
 		} else {
 			for (const declaration of removed.removedDeclarations) {
 				const index = removed.list.declarations.indexOf(declaration);

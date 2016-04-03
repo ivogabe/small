@@ -28,7 +28,7 @@ return (
 }
 );
 })();
-var  foo = 0;
+var foo = 0;
 ;
 ;
 
