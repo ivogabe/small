@@ -36,7 +36,7 @@ export class ExportNode extends Node {
 			const name = (<ts.PropertyAccessExpression> ast).name.text;
 
 			// Check for `module.exports`
-			if (expression.kind === ts.SyntaxKind.Identifier && (<ts.Identifier> expression).text === 'module' && name === 'exports' && checker.getTypeAtLocation(expression)) {
+			if (expression.kind === ts.SyntaxKind.Identifier && (<ts.Identifier> expression).text === 'module' && name === 'exports' && !checker.getSymbolAtLocation(expression)) {
 				const node = new ExportNode(ast);
 				node.isModuleExports = true;
 				return node;
