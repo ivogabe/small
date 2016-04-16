@@ -14,7 +14,7 @@ Features
 
 How to install
 --------------
-``` npm instal small ```
+``` npm install small ```
 or (for command line usage)
 ``` npm install small -g ```
 
