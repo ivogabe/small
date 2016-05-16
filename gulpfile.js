@@ -3,7 +3,7 @@ var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
 var sourcemaps = require('gulp-sourcemaps');
 
-var tsProject = ts.createProject('lib/tsconfig.json');
+var tsProject = ts.createProject('lib/tsconfig.json', { typescript: require('typescript') });
 var tslintConfig = require('./tslint.json');
 
 var paths = {
