@@ -22,7 +22,14 @@ export class Parser {
 			fileExists: fileName => fileName === file.filename,
 			readFile: fileName => fileName === file.filename ? file.source : undefined
 		};
-		const program = ts.createProgram([file.filename], { noResolve: true, noEmit: true, target: ts.ScriptTarget.Latest, allowNonTsExtensions: true, noLib: true }, host);
+		const program = ts.createProgram([file.filename], {
+			noResolve: true,
+			noEmit: true,
+			target: ts.ScriptTarget.Latest,
+			module: ts.ModuleKind.None,
+			allowJs: true,
+			noLib: true
+		}, host);
 		const typeChecker = program.getTypeChecker();
 
 		const walker = new Walker();

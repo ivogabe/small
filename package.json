@@ -19,7 +19,7 @@
     "commander": "^2.9.0",
     "graphlib": "^2.0.0",
     "source-map": "^0.5.3",
-    "typescript": "1.7.5",
+    "typescript": "1.8.10",
     "vinyl": "^1.1.0"
   },
   "devDependencies": {
