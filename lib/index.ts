@@ -109,8 +109,8 @@ export function gulp(startFileName: string = 'index.js', options: GulpOptions = 
 			this.emit('error', new Error('Streaming is not supported'));
 		}
 
+		fileNames.push(file.relative);
 		if (file.relative === startFileName) {
-			fileNames.push(file.relative);
 			gulpCompile(file);
 		}
 	});
