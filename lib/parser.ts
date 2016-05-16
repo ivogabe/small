@@ -4,14 +4,16 @@ import ts = require('typescript');
 import { SourceFile } from './file';
 import { ImportNode, ExportNode, ImportReference } from './node';
 
+const defaultFileName = 'file.js';
+
 export class Parser {
 	parse(file: SourceFile) {
-		const ast = ts.createSourceFile(file.filename, file.source, ts.ScriptTarget.Latest, true);
+		const ast = ts.createSourceFile(defaultFileName, file.source, ts.ScriptTarget.Latest, true);
 		file.ast = ast;
 
 		const host: ts.CompilerHost = {
 			getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {
-				if (fileName === file.filename) return ast;
+				if (fileName === defaultFileName) return ast;
 			},
 			getDefaultLibFileName: (options: ts.CompilerOptions) => '',
 			writeFile: () => {},
@@ -19,10 +21,10 @@ export class Parser {
 			getCanonicalFileName: (fileName: string) => fileName,
 			useCaseSensitiveFileNames: () => true,
 			getNewLine: () => '\n\r',
-			fileExists: fileName => fileName === file.filename,
-			readFile: fileName => fileName === file.filename ? file.source : undefined
+			fileExists: fileName => fileName === defaultFileName,
+			readFile: fileName => fileName === defaultFileName ? file.source : undefined
 		};
-		const program = ts.createProgram([file.filename], {
+		const program = ts.createProgram([defaultFileName], {
 			noResolve: true,
 			noEmit: true,
 			target: ts.ScriptTarget.Latest,
