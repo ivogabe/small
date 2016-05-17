@@ -4,7 +4,7 @@ import ts = require('typescript');
 import { SourceFile } from './file';
 import { ImportNode, ExportNode, ImportReference } from './node';
 
-const defaultFileName = 'file.js';
+const defaultFileName = 'file.ts';
 
 export class Parser {
 	parse(file: SourceFile) {
@@ -29,7 +29,6 @@ export class Parser {
 			noEmit: true,
 			target: ts.ScriptTarget.Latest,
 			module: ts.ModuleKind.None,
-			allowJs: true,
 			noLib: true
 		}, host);
 		const typeChecker = program.getTypeChecker();
