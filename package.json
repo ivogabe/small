@@ -1,6 +1,6 @@
 {
   "name": "small",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A tool to bundle commonjs files. Designed to produce the smallest file size possible.",
   "keywords": [
     "bundle",
