@@ -19,14 +19,14 @@
     "commander": "^2.9.0",
     "graphlib": "^2.0.0",
     "source-map": "^0.5.3",
-    "typescript": "^1.9.0-dev.20160516",
+    "typescript": "^2.1.0-dev.20161012",
     "vinyl": "^1.1.0"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-tslint": "^4.2.1",
-    "gulp-typescript": "~2.10.0"
+    "gulp-typescript": "^3.0.2"
   },
   "main": "./release/index.js",
   "bin": {

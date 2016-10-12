@@ -20,6 +20,7 @@ export class Parser {
 			getCurrentDirectory: () => '',
 			getCanonicalFileName: (fileName: string) => fileName,
 			useCaseSensitiveFileNames: () => true,
+			getDirectories: () => [],
 			getNewLine: () => '\n\r',
 			fileExists: fileName => fileName === defaultFileName,
 			readFile: fileName => fileName === defaultFileName ? file.source : undefined

@@ -3,7 +3,7 @@ var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
 var sourcemaps = require('gulp-sourcemaps');
 
-var tsProject = ts.createProject('lib/tsconfig.json', { typescript: require('typescript') });
+var tsProject = ts.createProject('lib/tsconfig.json');
 var tslintConfig = require('./tslint.json');
 
 var paths = {
@@ -13,8 +13,8 @@ var paths = {
 
 gulp.task('compile', function() {
 	var tsResult =
-		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts', 'node_modules/typescript/bin/typescript.d.ts'])
-			.pipe(ts(tsProject));
+		gulp.src([paths.lib + '/**.ts', paths.ref + '/**.ts'])
+			.pipe(tsProject());
 
 	return tsResult.js.pipe(gulp.dest('release'));
 });
