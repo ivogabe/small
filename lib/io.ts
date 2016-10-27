@@ -19,7 +19,7 @@ interface VinylSourcemap extends Vinyl {
 
 export function normalizePath(path: string) {
 	if (!path) return path;
-	return path.toLowerCase().replace(/\\/, '/');
+	return path.toLowerCase().replace(/\\/g, '/');
 }
 export function pathsEqual(a: string, b: string) {
 	return normalizePath(a) === normalizePath(b);

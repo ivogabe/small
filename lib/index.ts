@@ -5,6 +5,7 @@ import Vinyl = require('vinyl');
 import chalk = require('chalk');
 
 import project = require('./project');
+import { pathsEqual } from './io';
 export import Project = project.Project;
 export import ProjectOptions = project.ProjectOptions;
 
@@ -110,7 +111,7 @@ export function gulp(startFileName: string = 'index.js', options: GulpOptions = 
 		}
 
 		fileNames.push(file.relative);
-		if (file.relative === startFileName) {
+		if (pathsEqual(file.relative, startFileName)) {
 			gulpCompile(file);
 		}
 	});
