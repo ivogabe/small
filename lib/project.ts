@@ -13,6 +13,7 @@ import rewrite = require('./rewrite');
 import bundle = require('./bundle');
 import io = require('./io');
 import Vinyl = require('vinyl');
+import { normalizePath } from './io';
 
 export interface PackageData<T> {
 	standalone?: T;
@@ -120,6 +121,7 @@ export class Project extends events.EventEmitter {
 	private parser = new Parser();
 	private _fileQueue: number = 0;
 	addFile(filename: string): file.SourceFile {
+		filename = normalizePath(filename);
 		var f = new file.SourceFile(filename);
 		f.id = this.files.length;
 		f.varName = this.options.varPrefix + f.id;
@@ -158,6 +160,7 @@ export class Project extends events.EventEmitter {
 		return f;
 	}
 	getFile(filename: string): file.SourceFile {
+		filename = normalizePath(filename);
 		for (var i = 0; i < this.files.length; ++i) {
 			if (this.files[i].filename === filename) {
 				return this.files[i];
