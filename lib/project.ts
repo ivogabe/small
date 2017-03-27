@@ -121,8 +121,7 @@ export class Project extends events.EventEmitter {
 	private parser = new Parser();
 	private _fileQueue: number = 0;
 	addFile(filename: string): file.SourceFile {
-		filename = normalizePath(filename);
-		var f = new file.SourceFile(filename);
+		var f = new file.SourceFile(normalizePath(filename));
 		f.id = this.files.length;
 		f.varName = this.options.varPrefix + f.id;
 
